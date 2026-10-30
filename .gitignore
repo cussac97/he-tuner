@@ -1,0 +1,7 @@
+node_modules/
+dist/
+# personal recordings archived by the dev server (see README)
+data/
+.claude/
+.DS_Store
+*.log

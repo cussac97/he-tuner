@@ -1,0 +1,46 @@
+{
+  "name": "hetuner",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Find the right actuation point, Rapid Trigger and SOCD settings for your Wooting Hall-effect keyboard, measured on your own keystrokes.",
+  "license": "MIT",
+  "homepage": "https://cussac97.github.io/he-tuner/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cussac97/he-tuner.git"
+  },
+  "keywords": [
+    "wooting",
+    "hall-effect",
+    "keyboard",
+    "rapid-trigger",
+    "actuation",
+    "webhid",
+    "socd"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check": "esbuild scripts/check-sample.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/check-sample.mjs --log-level=warning && node node_modules/.cache/check-sample.mjs",
+    "analyze": "esbuild scripts/analyze-archive.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/analyze-archive.mjs --log-level=warning && node node_modules/.cache/analyze-archive.mjs"
+  },
+  "dependencies": {
+    "framer-motion": "^11.11.17",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@types/w3c-web-hid": "1.0.6",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.6.3",
+    "vite": "5.4.11"
+  }
+}
