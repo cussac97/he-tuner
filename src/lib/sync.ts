@@ -36,6 +36,11 @@ class Archive {
   }
 
   async refresh() {
+    // the archive endpoint only exists on the dev server (vite.config.ts)
+    if (!import.meta.env.DEV) {
+      this.update({ available: false })
+      return
+    }
     try {
       const r = await fetch(`${BASE}/status`)
       if (!r.ok) throw new Error()
@@ -47,6 +52,7 @@ class Archive {
   }
 
   private post(path: string, body: unknown): Promise<boolean> {
+    if (!import.meta.env.DEV) return Promise.resolve(false)
     this.update({ pending: this.state.pending + 1 })
     // one request at a time: exercise files can weigh a few MB
     const done = this.queue
