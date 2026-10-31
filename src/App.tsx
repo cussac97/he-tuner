@@ -14,6 +14,8 @@ import { Live } from './pages/Live'
 import { PlayHub } from './pages/Play'
 import { Results } from './pages/Results'
 
+const REPO = 'https://github.com/cussac97/he-tuner'
+
 const NAV: Array<[string, string]> = [
   ['/', 'Accueil'],
   ['/jouer', 'Jouer'],
@@ -95,6 +97,9 @@ export function App() {
         <div className="row" style={{ gap: 8 }}>
           <SourcePill />
           <HeaderConnect />
+          <a className="icon-link" href={REPO} target="_blank" rel="noreferrer" title="Code source sur GitHub" aria-label="Code source sur GitHub">
+            <Icon name="github" size={17} />
+          </a>
         </div>
       </header>
       <main className="main">
@@ -109,6 +114,18 @@ export function App() {
           </motion.div>
         </AnimatePresence>
       </main>
+      {!focus && (
+        <footer className="foot">
+          <span>
+            <b>HE Tuner</b> · open source, licence MIT · projet indépendant, non affilié à Wooting
+          </span>
+          <a href={REPO} target="_blank" rel="noreferrer">
+            <Icon name="github" size={15} />
+            cussac97/he-tuner
+            <Icon name="external" size={13} />
+          </a>
+        </footer>
+      )}
     </>
   )
 }

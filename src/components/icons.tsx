@@ -55,6 +55,13 @@ const PATHS = {
   replay: <path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" />,
   chevron: <path d="m9 6 6 6-6 6" />,
   play: <path d="M7 5v14l11-7L7 5Z" fill="currentColor" />,
+  github: (
+    <>
+      <path d="M15 21.5v-3.8a3.6 3.6 0 0 0-1-2.7c3.2-.4 6.5-1.6 6.5-7a5.4 5.4 0 0 0-1.5-3.8 5 5 0 0 0-.1-3.7s-1.2-.4-3.9 1.4a13.4 13.4 0 0 0-7 0C5.3.1 4.1.5 4.1.5A5 5 0 0 0 4 4.2 5.4 5.4 0 0 0 2.5 8c0 5.4 3.3 6.6 6.5 7a3.6 3.6 0 0 0-1 2.7v3.8" />
+      <path d="M8 18.5c-3 1-4.6-.3-5.5-2.5" />
+    </>
+  ),
+  external: <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />,
 }
 
 export type IconName = keyof typeof PATHS
