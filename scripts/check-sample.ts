@@ -16,7 +16,7 @@ for (const e of ta.excursions) {
   if (e.expected > 0) g.I.push(...e.peaks); else g.U.push(e.peak)
 }
 for (const [f, g] of Object.entries(byF)) console.log(f, 'I', g.I.length, 'minI', Math.min(...g.I).toFixed(2), 'U', g.U.length, 'U max', g.U.length ? Math.max(...g.U).toFixed(2) : '-', 'U p90', g.U.length ? quantile(g.U, 0.9).toFixed(2) : '-')
-const p = buildProfile(ex, { travel: 4, layout: 'iso', lang: 'en', duration: 60, safety: 0.5, refActuation: 1.5 })
+const p = buildProfile(ex, { travel: 4, layout: 'iso', duration: 60, safety: 0.5, refActuation: 1.5 })
 console.log('current', p.current.actuation, JSON.stringify(p.current.rt))
 console.log('typing A', p.typing?.actuation, 'cur', JSON.stringify(p.typing?.current), 'rec', JSON.stringify(p.typing?.recommended))
 for (const o of p.typing?.overrides ?? []) console.log('  override', o.label, o.value, o.reason)
@@ -69,5 +69,31 @@ import { composeDead, TypingEngine } from '../src/lib/typing'
   const cls = eng.keys.map((k) => k.cls)
   const ok = eng.results.every((r) => r.typed === r.word) && cls.filter((c) => c === 'wrong').length === 1 && cls[cls.length - 1] === 'wrong'
   console.log('dead keys', JSON.stringify(eng.results), cls.join(','), ok ? 'OK' : 'FAILED')
+  if (!ok) (globalThis as any).process.exitCode = 1
+}
+
+// --- German / Spanish: ´ then a → á, ¨ then u → ü, ñ and ä as direct keys; ß folds to ss ---
+import { stripAccents, WORDS } from '../src/lib/typing'
+{
+  const eng = new TypingEngine(['está', 'über', 'año', 'mädchen'], () => null, 0)
+  let t = 1
+  const type = (word: string, deadBefore = new Set<number>()) => {
+    ;[...word].forEach((ch, i) => {
+      const plain = ch.normalize('NFD')[0]
+      if (deadBefore.has(i)) {
+        eng.press(t++, 'Quote', 'Dead')
+        eng.press(t++, 'KeyX', composeDead(plain, eng.expectedChar()))
+      } else eng.press(t++, 'KeyX', ch)
+    })
+    eng.press(t++, 'Space', ' ')
+  }
+  type('está', new Set([3]))
+  type('über', new Set([0]))
+  type('año') // ñ is its own key on a Spanish layout
+  type('mädchen') // ä is its own key on a German layout
+  const folded = stripAccents('straße') === 'strasse' && stripAccents('mañana') === 'manana'
+  const lists = (['en', 'fr', 'de', 'es'] as const).every((l) => WORDS[l].length > 150 && WORDS[l].every((w) => /^[a-z]+$/.test(stripAccents(w))))
+  const ok = eng.results.every((r) => r.typed === r.word) && eng.wrong === 0 && folded && lists
+  console.log('de/es accents', JSON.stringify(eng.results), { folded, lists }, ok ? 'OK' : 'FAILED')
   if (!ok) (globalThis as any).process.exitCode = 1
 }

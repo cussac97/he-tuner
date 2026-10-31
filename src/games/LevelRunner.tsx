@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/icons'
 import { Backdrop, Btn, CountUp, ease, MaskText, Pulse, Ring, setFocusMode, spring } from '../components/ui'
+import { useT } from '../i18n'
+import { runnerText } from '../i18n/games/runner'
 import { navigate } from '../lib/router'
 import { LEVELS, rankFor } from './levels'
 import type { LevelResult } from './types'
@@ -28,6 +30,7 @@ export function LevelRunner({ levels, mode }: { levels: typeof LEVELS; mode: 'ru
   const [attempt, setAttempt] = useState(0)
   const [results, setResults] = useState<LevelResult[]>([])
   const [paused, setPaused] = useState(false)
+  const t = useT(runnerText)
   const level = levels[idx]
   const isRun = mode === 'run'
   const last = idx === levels.length - 1
@@ -102,7 +105,7 @@ export function LevelRunner({ levels, mode }: { levels: typeof LEVELS; mode: 'ru
       {isRun && (
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <span className="label-mono">
-            {phase === 'summary' ? 'Parcours terminé' : `${pad(idx + 1)} / ${pad(levels.length)} — ${level.name}`}
+            {phase === 'summary' ? t.runDone : `${pad(idx + 1)} / ${pad(levels.length)} — ${level.name}`}
           </span>
           <div className="run-dots" style={{ flex: 1, maxWidth: 420, margin: '0 18px' }}>
             {levels.map((l, i) => {
@@ -140,7 +143,7 @@ export function LevelRunner({ levels, mode }: { levels: typeof LEVELS; mode: 'ru
                 <Icon name={level.icon} size={28} />
               </motion.div>
               <span className="label-mono" style={{ position: 'relative' }}>
-                {isRun ? `Niveau ${pad(idx + 1)}` : 'Exercice'}
+                {isRun ? t.level(pad(idx + 1)) : t.exercise}
               </span>
               <MaskText text={level.name} className="level-title" delay={0.1} style={{ position: 'relative' }} />
               <motion.p
@@ -159,12 +162,12 @@ export function LevelRunner({ levels, mode }: { levels: typeof LEVELS; mode: 'ru
                       <motion.div initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: INTRO_MS / 1000, ease: 'linear' }} />
                     </div>
                     <span className="hint-key">
-                      <span className="kbd">espace</span> lancer · <span className="kbd">P</span> pause
+                      <span className="kbd">{t.spaceKey}</span> {t.hintStart} · <span className="kbd">P</span> {t.hintPause}
                     </span>
                   </>
                 ) : (
                   <Btn className="primary big" onClick={startLevel}>
-                    Lancer <Icon name="arrow" size={16} />
+                    {t.start} <Icon name="arrow" size={16} />
                   </Btn>
                 )}
               </motion.div>
@@ -245,12 +248,13 @@ function ResultCard({
   onNext: () => void
   onRetry: () => void
 }) {
+  const t = useT(runnerText)
   return (
     <motion.div key="res" {...screen} className="col" style={{ alignItems: 'center', gap: 20, width: '100%', position: 'relative' }}>
       <div className="dotgrid" />
       {!result.failed && result.score >= 700 && <Pulse />}
       <div className="col" style={{ alignItems: 'center', gap: 4, position: 'relative' }}>
-        <span className="label-mono">{result.failed ? 'Essai non valide' : 'Score'}</span>
+        <span className="label-mono">{result.failed ? t.invalid : t.score}</span>
         <div className="xp" style={{ color: result.failed ? 'var(--ink-3)' : 'var(--ink)' }}>
           {result.failed ? '—' : (
             <>
@@ -298,15 +302,15 @@ function ResultCard({
       )}
       <div className="row" style={{ marginTop: 4, position: 'relative' }}>
         <Btn onClick={onRetry}>
-          <Icon name="replay" size={15} /> Refaire
+          <Icon name="replay" size={15} /> {t.retry}
         </Btn>
         <Btn className="primary" onClick={onNext}>
           {auto && <Ring ms={RESULT_MS - 50} color="var(--accent-ink)" size={18} />}
-          {last ? (isRun ? 'Voir le bilan' : 'Exercice suivant') : 'Niveau suivant'} <Icon name="arrow" size={15} />
+          {last ? (isRun ? t.seeSummary : t.nextExercise) : t.nextLevel} <Icon name="arrow" size={15} />
         </Btn>
       </div>
       <span className="hint-key" style={{ position: 'relative' }}>
-        <span className="kbd">espace</span> continuer · <span className="kbd">R</span> refaire
+        <span className="kbd">{t.spaceKey}</span> {t.hintContinue} · <span className="kbd">R</span> {t.hintRetry}
       </span>
     </motion.div>
   )
@@ -315,6 +319,7 @@ function ResultCard({
 function Summary({ results, levels, onReplay }: { results: LevelResult[]; levels: typeof LEVELS; onReplay: () => void }) {
   const xp = results.reduce((s, r) => s + (r?.score ?? 0), 0)
   const rank = rankFor(xp)
+  const t = useT(runnerText)
   return (
     <motion.div key="sum" {...screen} className="col" style={{ alignItems: 'center', gap: 22, width: '100%', position: 'relative' }}>
       <Backdrop />
@@ -328,7 +333,7 @@ function Summary({ results, levels, onReplay }: { results: LevelResult[]; levels
         {rank.name}
       </motion.div>
       <div className="col" style={{ alignItems: 'center', gap: 2, position: 'relative' }}>
-        <span className="label-mono">Score total</span>
+        <span className="label-mono">{t.totalScore}</span>
         <span className="xp" style={{ fontSize: 56 }}>
           <CountUp value={xp} duration={1.4} />
           <span className="num" style={{ fontSize: 16, color: 'var(--ink-3)', marginLeft: 8, letterSpacing: 0 }}>
@@ -370,10 +375,10 @@ function Summary({ results, levels, onReplay }: { results: LevelResult[]; levels
       </div>
       <div className="row" style={{ marginTop: 6, position: 'relative' }}>
         <Btn onClick={onReplay}>
-          <Icon name="replay" size={15} /> Rejouer
+          <Icon name="replay" size={15} /> {t.replay}
         </Btn>
         <Btn className="primary big" onClick={() => navigate('/reglages')}>
-          Voir mes réglages <Icon name="arrow" size={16} />
+          {t.seeSettings} <Icon name="arrow" size={16} />
         </Btn>
       </div>
     </motion.div>

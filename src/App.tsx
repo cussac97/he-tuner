@@ -2,8 +2,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { ConnectButtons, SourcePill, useDevice } from './components/Device'
 import { Icon } from './components/icons'
+import { LangMenu } from './components/LangPicker'
 import { Btn, ease, spring, useFocusMode } from './components/ui'
 import { LevelRunner } from './games/LevelRunner'
+import { useLang, useT } from './i18n'
+import { shellText } from './i18n/app/shell'
 import { LEVELS } from './games/levels'
 import { demo } from './lib/demo'
 import { hid } from './lib/hid'
@@ -16,26 +19,27 @@ import { Results } from './pages/Results'
 
 const REPO = 'https://github.com/cussac97/he-tuner'
 
-const NAV: Array<[string, string]> = [
-  ['/', 'Accueil'],
-  ['/jouer', 'Jouer'],
-  ['/live', 'Visualiseur'],
-  ['/reglages', 'Mes réglages'],
-  ['/donnees', 'Données'],
+const NAV: Array<[string, keyof (typeof shellText)['en']['nav']]> = [
+  ['/', 'home'],
+  ['/jouer', 'play'],
+  ['/live', 'live'],
+  ['/reglages', 'settings'],
+  ['/donnees', 'data'],
 ]
 
 /** Exercises need an analog source: the keyboard, or the demo. */
 function NeedsSource({ children }: { children: ReactNode }) {
   const { source } = useDevice()
+  const t = useT(shellText)
   if (source !== 'none') return <>{children}</>
   return (
     <div className="card stage" style={{ minHeight: 420 }}>
       <motion.div className="level-icon" animate={{ boxShadow: ['0 0 0px rgba(200,255,46,0)', '0 0 40px rgba(200,255,46,.35)', '0 0 0px rgba(200,255,46,0)'] }} transition={{ duration: 2.4, repeat: Infinity }}>
         <Icon name="plug" size={26} />
       </motion.div>
-      <h2>Branche ton Wooting</h2>
+      <h2>{t.needsTitle}</h2>
       <p className="muted" style={{ maxWidth: 440 }}>
-        Connecte le clavier pour enregistrer tes vraies données, ou lance le mode démo pour essayer avec des courses simulées.
+        {t.needsBody}
       </p>
       <ConnectButtons />
     </div>
@@ -45,6 +49,9 @@ function NeedsSource({ children }: { children: ReactNode }) {
 export function App() {
   const route = useRoute()
   const focus = useFocusMode()
+  // re-render the whole tree on a language change, so text read with tr() during render follows
+  useLang()
+  const t = useT(shellText)
   const section = '/' + (route.split('/')[1] ?? '')
 
   let page: ReactNode
@@ -84,20 +91,21 @@ export function App() {
           <span className="brand-name">HE Tuner</span>
         </button>
         <nav className="nav">
-          {NAV.map(([to, label]) => {
+          {NAV.map(([to, key]) => {
             const on = to === '/' ? section === '/' : section === to
             return (
               <button key={to} className={on ? 'on' : ''} onClick={() => navigate(to)}>
                 {on && <motion.span layoutId="nav-bg" className="nav-bg" transition={spring} />}
-                {label}
+                {t.nav[key]}
               </button>
             )
           })}
         </nav>
-        <div className="row" style={{ gap: 8 }}>
+        <div className="row topbar-tools" style={{ gap: 8 }}>
           <SourcePill />
           <HeaderConnect />
-          <a className="icon-link" href={REPO} target="_blank" rel="noreferrer" title="Code source sur GitHub" aria-label="Code source sur GitHub">
+          <LangMenu />
+          <a className="icon-link" href={REPO} target="_blank" rel="noreferrer" title={t.repoTitle} aria-label={t.repoTitle}>
             <Icon name="github" size={17} />
           </a>
         </div>
@@ -117,7 +125,7 @@ export function App() {
       {!focus && (
         <footer className="foot">
           <span>
-            <b>HE Tuner</b> · open source, licence MIT · projet indépendant, non affilié à Wooting
+            <b>HE Tuner</b> · {t.footer}
           </span>
           <a href={REPO} target="_blank" rel="noreferrer">
             <Icon name="github" size={15} />
@@ -132,14 +140,15 @@ export function App() {
 
 function HeaderConnect() {
   const { source } = useDevice()
+  const t = useT(shellText)
   if (source !== 'none') return null
   return (
     <>
       <Btn className="small primary" onClick={() => hid.request()}>
-        Connecter
+        {t.connect}
       </Btn>
       <Btn className="small ghost" onClick={() => demo.start()}>
-        Démo
+        {t.demo}
       </Btn>
     </>
   )

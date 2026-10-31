@@ -4,26 +4,24 @@ import { Icon, type IconName } from '../components/icons'
 import { KeyboardViz } from '../components/KeyboardViz'
 import { Btn, ease, Item, MaskText, Reveal, Spot } from '../components/ui'
 import { LEVELS } from '../games/levels'
+import { useT } from '../i18n'
+import { homeText } from '../i18n/app/home'
 import { navigate } from '../lib/router'
 import { generateSampleSession } from '../lib/sample'
 import { store, useStore } from '../lib/store'
 
-const SPECS: Array<[string, string]> = [
-  ['8 000 Hz', 'lecture analogique'],
-  ['0,004 mm', 'résolution'],
-  ['6 tests', '≈ 2 minutes'],
-  ['100 %', 'local, rien n’est envoyé'],
-]
+const SPECS = ['rate', 'resolution', 'tests', 'local'] as const
 
-const FEATURES: Array<{ icon: IconName; t: string; d: string }> = [
-  { icon: 'analog', t: 'Lecture brute', d: 'La course de chaque touche à 8 kHz, et l’état d’actuation que le clavier calcule lui-même.' },
-  { icon: 'bolt', t: 'Six tests ciblés', d: 'Frappe, repos, spam, maintien, strafe, contrôle analogique : chacun isole un comportement précis.' },
-  { icon: 'flask', t: 'Rejoué, pas deviné', d: 'Chaque réglage proposé a d’abord été simulé sur tes propres frappes enregistrées.' },
+const FEATURES: Array<{ icon: IconName; key: 'raw' | 'tests' | 'replay' }> = [
+  { icon: 'analog', key: 'raw' },
+  { icon: 'bolt', key: 'tests' },
+  { icon: 'flask', key: 'replay' },
 ]
 
 export function Home() {
   const s = useStore()
   const { source } = useDevice()
+  const t = useT(homeText)
   const hasData = s.exercises.length > 0
 
   return (
@@ -31,12 +29,12 @@ export function Home() {
       <div className="col" style={{ alignItems: 'center', textAlign: 'center', gap: 22, paddingTop: 40 }}>
         <motion.span className="pill" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}>
           <span className="dot" style={{ background: 'var(--accent)', boxShadow: '0 0 8px var(--accent)' }} />
-          Wooting · protocole analogique V2
+          {t.pill}
         </motion.span>
         <h1 style={{ maxWidth: 860 }}>
-          <MaskText text="Ton clavier, réglé" />
+          <MaskText text={t.hero1} />
           <br />
-          <MaskText text="au dixième de millimètre." delay={0.18} className="accent" />
+          <MaskText text={t.hero2} delay={0.18} className="accent" />
         </h1>
         <motion.p
           className="muted"
@@ -45,26 +43,25 @@ export function Home() {
           animate={{ opacity: 1, filter: 'blur(0px)' }}
           transition={{ duration: 0.7, ease, delay: 0.35 }}
         >
-          HE Tuner lit la course de chaque touche pendant six tests courts, rejoue tes frappes avec des centaines de réglages et te dit quoi mettre dans
-          Wootility.
+          {t.sub}
         </motion.p>
         <motion.div className="row" style={{ justifyContent: 'center' }} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease, delay: 0.5 }}>
           <Btn className="primary huge" onClick={() => navigate('/jouer/run')}>
-            <Icon name="play" size={14} /> Lancer le parcours
+            <Icon name="play" size={14} /> {t.run}
           </Btn>
           {!hasData ? (
             <Btn
               className="big"
               onClick={async () => {
-                await store.addMany(generateSampleSession(s.settings.layout, s.settings.lang))
+                await store.addMany(generateSampleSession(s.settings.layout))
                 navigate('/reglages')
               }}
             >
-              Voir un exemple
+              {t.example}
             </Btn>
           ) : (
             <Btn className="big" onClick={() => navigate('/reglages')}>
-              Mes réglages
+              {t.mySettings}
             </Btn>
           )}
         </motion.div>
@@ -82,14 +79,10 @@ export function Home() {
       <motion.div className="card" initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.8, ease, delay: 0.55 }}>
         <div className="card-head">
           <div>
-            <span className="label-mono">Live</span>
-            <h3 style={{ marginTop: 6 }}>Ton clavier, en direct</h3>
+            <span className="label-mono">{t.liveTag}</span>
+            <h3 style={{ marginTop: 6 }}>{t.liveTitle}</h3>
             <p>
-              {source === 'hid'
-                ? 'Appuie sur une touche : elle s’enfonce et se remplit selon sa vraie profondeur.'
-                : source === 'demo'
-                  ? 'Mode démo : tes frappes sont converties en courses simulées.'
-                  : 'Branche ton Wooting (Chrome, Edge, Arc, Brave) ou essaie la démo.'}
+              {source === 'hid' ? t.liveHid : source === 'demo' ? t.liveDemo : t.liveNone}
             </p>
           </div>
           <ConnectButtons />
@@ -98,11 +91,11 @@ export function Home() {
       </motion.div>
 
       <Reveal className="grid g4">
-        {SPECS.map(([v, l]) => (
-          <Item key={v} className="tile" style={{ padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'var(--title)', fontWeight: 900, fontSize: 24, letterSpacing: '-0.03em' }}>{v}</div>
+        {SPECS.map((k) => (
+          <Item key={k} className="tile" style={{ padding: '16px 18px' }}>
+            <div style={{ fontFamily: 'var(--title)', fontWeight: 900, fontSize: 24, letterSpacing: '-0.03em' }}>{t.specs[k].v}</div>
             <div className="label-mono" style={{ marginTop: 2 }}>
-              {l}
+              {t.specs[k].l}
             </div>
           </Item>
         ))}
@@ -110,13 +103,13 @@ export function Home() {
 
       <Reveal className="grid g3">
         {FEATURES.map((f) => (
-          <Spot key={f.t}>
+          <Spot key={f.key}>
             <div className="icon-tile">
               <Icon name={f.icon} />
             </div>
-            <h3 style={{ marginTop: 16 }}>{f.t}</h3>
+            <h3 style={{ marginTop: 16 }}>{t.features[f.key].t}</h3>
             <p className="muted" style={{ marginTop: 6, fontSize: 13.5 }}>
-              {f.d}
+              {t.features[f.key].d}
             </p>
           </Spot>
         ))}

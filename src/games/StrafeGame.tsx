@@ -5,6 +5,9 @@ import { analyzeStrafe } from '../analysis/exercises'
 import { estimateActuation, fromHardware } from '../analysis/typing'
 import { Bars } from '../components/Charts'
 import { spring } from '../components/ui'
+import { tr, useT } from '../i18n'
+import { scenariosText } from '../i18n/games/scenarios'
+import { strafeText } from '../i18n/games/strafe'
 import { keyLabel } from '../lib/layout'
 import { recorder } from '../lib/recorder'
 import type { StrafeMeta } from '../lib/types'
@@ -38,6 +41,7 @@ export function StrafeGame({ quick, onComplete }: GameProps) {
   const score = useRef({ ok: 0, total: 0 })
   const held = useRef({ l: false, r: false })
   useSwallowKeys(true)
+  const t = useT(strafeText)
   const main = 'var(--accent)'
   const soft = 'var(--accent-soft)'
   const L = keyLabel(LEFT)
@@ -97,41 +101,54 @@ export function StrafeGame({ quick, onComplete }: GameProps) {
     const vals = Object.values(est.perKey)
     const current = vals.length && (hwInfo || downs.length >= 10) ? round05(vals.reduce((s, v) => s + v.a * v.n, 0) / vals.reduce((s, v) => s + v.n, 0)) : null
     const cur = current ?? 1.5
+    // chart labels are rebuilt on each read so they follow a language change
+    const names = () => [tr(scenariosText).current(cur.toFixed(1)), tr(scenariosText).fixed('1.5'), 'Rapid Trigger 0.3', 'Rapid Trigger 0.15']
+    const [n0, n1, n2, n3] = names()
     const a = analyzeStrafe(rec, [
-      { name: `Actuel (${cur.toFixed(1)} mm)`, s: fixed(cur), socd: 'none' },
-      { name: 'Fixe 1.5 mm', s: fixed(1.5), socd: 'none' },
-      { name: 'Rapid Trigger 0.3', s: rapid(0.5, 0.3), socd: 'none' },
-      { name: 'Rapid Trigger 0.15', s: rapid(0.5, 0.15), socd: 'none' },
+      { name: n0, s: fixed(cur), socd: 'none' },
+      { name: n1, s: fixed(1.5), socd: 'none' },
+      { name: n2, s: rapid(0.5, 0.3), socd: 'none' },
+      { name: n3, s: rapid(0.5, 0.15), socd: 'none' },
     ])
     const pct = score.current.total ? score.current.ok / score.current.total : 0
     const stops = a?.results.map((r) => r.stopDelay).filter(Number.isFinite) ?? []
     const gain = a && stops.length >= 2 ? a.results[0].stopDelay - Math.min(...stops) : NaN
+    // getters: the score screen follows a language change
     onComplete({
       score: clampScore(pct * 1000),
-      headline:
-        a && a.overlapRate > 0.3
-          ? `Tu appuies souvent la nouvelle direction avant de lâcher l’ancienne (${Math.round(a.overlapRate * 100)} % des changements).`
+      get headline() {
+        const m = tr(strafeText)
+        return a && a.overlapRate > 0.3
+          ? m.headlineOverlap(Math.round(a.overlapRate * 100))
           : Number.isFinite(gain) && gain > 3
-            ? `Contre-strafes propres. Le Rapid Trigger t’arrêterait ${Math.round(gain)} ms plus tôt.`
-            : 'Contre-strafes propres et réactifs.',
-      stats: [
-        { label: 'Bonne direction', value: String(Math.round(pct * 100)), unit: '%' },
-        { label: 'Changements', value: String(a?.transitions ?? 0) },
-        { label: 'Chevauchements', value: String(a ? Math.round(a.overlapRate * 100) : 0), unit: '%' },
-      ],
-      extra: a ? (
-        <div style={{ width: '100%', maxWidth: 560, textAlign: 'left' }}>
-          <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
-            Délai d’arrêt rejoué avec chaque réglage
-          </p>
-          <Bars rows={a.results.map((r) => ({ label: r.name, value: r.stopDelay }))} unit="ms" />
-        </div>
-      ) : undefined,
+            ? m.headlineGain(Math.round(gain))
+            : m.headlineClean
+      },
+      get stats() {
+        const m = tr(strafeText)
+        return [
+          { label: m.rightDir, value: String(Math.round(pct * 100)), unit: '%' },
+          { label: m.switches, value: String(a?.transitions ?? 0) },
+          { label: m.overlaps, value: String(a ? Math.round(a.overlapRate * 100) : 0), unit: '%' },
+        ]
+      },
+      get extra() {
+        if (!a) return undefined
+        const labels = names()
+        return (
+          <div style={{ width: '100%', maxWidth: 560, textAlign: 'left' }}>
+            <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
+              {tr(strafeText).chartTitle}
+            </p>
+            <Bars rows={a.results.map((r, i) => ({ label: labels[i] ?? r.name, value: r.stopDelay }))} unit="ms" />
+          </div>
+        )
+      },
     })
   }
 
   const p = idx >= 0 ? prompts.current[idx] : null
-  const text = saving ? '…' : !p ? 'Prêt…' : p.dir === -1 ? `◀ ${L}` : p.dir === 1 ? `${R} ▶` : 'STOP'
+  const text = saving ? '…' : !p ? t.ready : p.dir === -1 ? `◀ ${L}` : p.dir === 1 ? `${R} ▶` : 'STOP'
 
   return (
     <div className="col" style={{ alignItems: 'center', gap: 22, width: '100%' }}>

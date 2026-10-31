@@ -4,6 +4,7 @@
 // must find them (deep brushes on pinkies, heavy thumb on space, shallow lifts...).
 
 import { fixed, simulate, valueAt } from '../analysis/core'
+import { getLang, type Lang } from '../i18n'
 import { areNeighbors, fingerFor, getLayout, MODIFIERS, type LayoutKind } from './layout'
 import type { HwEvent, KeyEventRec, TraceData } from './recorder'
 import { newId } from './store'
@@ -129,7 +130,7 @@ const codeFor = (ch: string) => (ch === ' ' ? 'Space' : /^[a-z]$/.test(ch) ? `Ke
 
 // ---------------------------------------------------------------------------
 
-function typingSample(g: Gen, layout: LayoutKind, t0: number, lang: 'fr' | 'en'): AnyExercise {
+function typingSample(g: Gen, layout: LayoutKind, t0: number, lang: Lang): AnyExercise {
   const duration = 60_000
   const t1 = t0 + duration
   const words = randomWords(lang, 120, g.rnd, false)
@@ -406,7 +407,7 @@ function analogSample(g: Gen, t0: number): AnyExercise {
   return { id: newId(), kind: 'analog', createdAt: 0, source: 'sample', travel: TRAVEL, t0, t1: t0 + dur + 400, traces: tb.build(), keys: [], meta: { code, t0, path } }
 }
 
-export function generateSampleSession(layout: LayoutKind, lang: 'fr' | 'en', seed = 42): AnyExercise[] {
+export function generateSampleSession(layout: LayoutKind, lang: Lang = getLang(), seed = 42): AnyExercise[] {
   const g = new Gen(seed)
   const now = Date.now()
   const list: AnyExercise[] = [

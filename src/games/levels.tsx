@@ -1,4 +1,6 @@
 import type { ComponentType } from 'react'
+import { tr } from '../i18n'
+import { levelsText } from '../i18n/games/levels'
 import { keyLabel } from '../lib/layout'
 import type { ExerciseKind } from '../lib/types'
 import { ANALOG_CODE, AnalogGame } from './AnalogGame'
@@ -14,54 +16,62 @@ const K = (c: string) => <span className="kbd">{keyLabel(c)}</span>
 export const LEVELS: Array<LevelDef & { Game: ComponentType<GameProps> }> = [
   {
     kind: 'typing',
-    name: 'Frappe',
+    get name() {
+      return tr(levelsText).typing.name
+    },
     icon: 'keyboard',
     countdown: false,
-    tagline: () => <>Tape les mots comme d’habitude. Le chrono part à ta première lettre.</>,
+    tagline: () => tr(levelsText).typing.tagline(),
     Game: TypingGame,
   },
   {
     kind: 'rest',
-    name: 'Repos',
+    get name() {
+      return tr(levelsText).rest.name
+    },
     icon: 'rest',
     countdown: true,
-    tagline: () => <>Pose tes doigts sur le clavier, sans appuyer. Ne bouge plus.</>,
+    tagline: () => tr(levelsText).rest.tagline(),
     Game: RestGame,
   },
   {
     kind: 'repeat',
-    name: 'Spam',
+    get name() {
+      return tr(levelsText).repeat.name
+    },
     icon: 'bolt',
     countdown: true,
-    tagline: () => <>Martèle {K(REPEAT_CODE)} le plus vite possible.</>,
+    tagline: () => tr(levelsText).repeat.tagline(K(REPEAT_CODE)),
     Game: RepeatGame,
   },
   {
     kind: 'hold',
-    name: 'Maintien',
+    get name() {
+      return tr(levelsText).hold.name
+    },
     icon: 'hold',
     countdown: true,
-    tagline: () => <>Maintiens {K(HOLD_CODE)} à fond, comme pour avancer en jeu. Trois fois.</>,
+    tagline: () => tr(levelsText).hold.tagline(K(HOLD_CODE)),
     Game: HoldGame,
   },
   {
     kind: 'strafe',
-    name: 'Strafe',
+    get name() {
+      return tr(levelsText).strafe.name
+    },
     icon: 'strafe',
     countdown: true,
-    tagline: () => (
-      <>
-        Suis les flèches avec {K(LEFT)} et {K(RIGHT)}. Change de sens le plus vite possible.
-      </>
-    ),
+    tagline: () => tr(levelsText).strafe.tagline(K(LEFT), K(RIGHT)),
     Game: StrafeGame,
   },
   {
     kind: 'analog',
-    name: 'Analogique',
+    get name() {
+      return tr(levelsText).analog.name
+    },
     icon: 'analog',
     countdown: true,
-    tagline: () => <>Enfonce {K(ANALOG_CODE)} plus ou moins pour garder le curseur dans la zone.</>,
+    tagline: () => tr(levelsText).analog.tagline(K(ANALOG_CODE)),
     Game: AnalogGame,
   },
 ]

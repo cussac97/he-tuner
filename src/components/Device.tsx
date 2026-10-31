@@ -1,4 +1,6 @@
 import { useEffect, useReducer } from 'react'
+import { useT } from '../i18n'
+import { deviceText } from '../i18n/app/device'
 import { demo } from '../lib/demo'
 import { Icon } from './icons'
 import { hid } from '../lib/hid'
@@ -19,6 +21,7 @@ export function useDevice() {
 
 export function SourcePill() {
   const { status, source } = useDevice()
+  const t = useT(deviceText)
   if (source === 'hid' && status.state === 'connected')
     return (
       <span className="pill ok">
@@ -30,33 +33,34 @@ export function SourcePill() {
     return (
       <span className="pill demo">
         <span className="dot" />
-        Mode démo
+        {t.demoMode}
       </span>
     )
   if (status.state === 'error')
     return (
       <span className="pill bad">
         <span className="dot" />
-        Erreur
+        {t.error}
       </span>
     )
   return (
     <span className="pill">
       <span className="dot" />
-      Aucun clavier
+      {t.noKeyboard}
     </span>
   )
 }
 
 export function ConnectButtons({ compact }: { compact?: boolean }) {
   const { status, source } = useDevice()
+  const t = useT(deviceText)
   const connected = source === 'hid'
   const unsupported = status.state === 'unsupported'
   return (
     <div className="row">
       {connected ? (
         <button className="btn small" onClick={() => hid.disconnect()}>
-          Déconnecter
+          {t.disconnect}
         </button>
       ) : (
         <button
@@ -66,19 +70,19 @@ export function ConnectButtons({ compact }: { compact?: boolean }) {
             if (source === 'demo') demo.stop()
             await hid.request()
           }}
-          title={unsupported ? 'WebHID est requis : utilise Chrome, Edge, Arc ou Brave' : undefined}
+          title={unsupported ? t.needWebHid : undefined}
         >
-          Connecter le Wooting
+          {t.connect}
         </button>
       )}
       {!connected &&
         (source === 'demo' ? (
           <button className={`btn ${compact ? 'small' : ''} ghost`} onClick={() => demo.stop()}>
-            Quitter la démo
+            {t.exitDemo}
           </button>
         ) : (
           <button className={`btn ${compact ? 'small' : ''}`} onClick={() => demo.start()}>
-            Mode démo
+            {t.demoMode}
           </button>
         ))}
     </div>
@@ -87,6 +91,7 @@ export function ConnectButtons({ compact }: { compact?: boolean }) {
 
 export function DeviceHint() {
   const { status } = useDevice()
+  const t = useT(deviceText)
   if (status.state === 'unsupported')
     return (
       <div className="callout warn">
@@ -94,10 +99,8 @@ export function DeviceHint() {
           <Icon name="warn" size={16} />
         </span>
         <div>
-          <b>Ce navigateur ne gère pas WebHID.</b>
-          <p className="muted">
-            Ouvre cette page dans Chrome, Edge, Arc ou Brave sur ton Mac pour lire le clavier. Le mode démo et la session exemple fonctionnent partout.
-          </p>
+          <b>{t.unsupportedTitle}</b>
+          <p className="muted">{t.unsupportedBody}</p>
         </div>
       </div>
     )
@@ -109,7 +112,7 @@ export function DeviceHint() {
         </span>
         <div>
           <b>{status.message}</b>
-          <p className="muted">Débranche/rebranche le clavier puis reconnecte. Si rien n’arrive, ferme Wootility et réessaie.</p>
+          <p className="muted">{t.errorBody}</p>
         </div>
       </div>
     )

@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { useT } from '../i18n'
+import { chartsText } from '../i18n/results/charts'
 
 const C = {
   intended: '#c8ff2e',
@@ -26,6 +28,7 @@ export function DepthHistogram({
   current: number | null
   travel?: number
 }) {
+  const t = useT(chartsText)
   const W = 720
   const H = 260
   const padL = 84
@@ -72,22 +75,22 @@ export function DepthHistogram({
       )}
       <line x1={padL} x2={W - padR} y1={mid} y2={mid} stroke={C.axis} />
       <text x={padL - 8} y={mid - 8} fill={C.unintended} fontSize="11" textAnchor="end">
-        involontaire
+        {t.unintended}
       </text>
       <text x={padL - 8} y={mid + 16} fill={C.intended} fontSize="11" textAnchor="end">
-        voulu
+        {t.intended}
       </text>
       {current !== null && (
         <g>
           <line x1={x(current)} x2={x(current)} y1={14} y2={H - 22} stroke="#5f5f68" strokeDasharray="4 4" />
           <text x={x(current) + 5} y={24} fill="#a0a0a8" fontSize="11" fontFamily="JetBrains Mono, monospace">
-            actuel {current.toFixed(1)}
+            {t.current(current.toFixed(1))}
           </text>
         </g>
       )}
       <line x1={x(chosen)} x2={x(chosen)} y1={14} y2={H - 22} stroke={C.ink} strokeWidth={2} />
       <text x={x(chosen) + 5} y={current !== null && Math.abs(current - chosen) < 0.6 ? 40 : 24} fill={C.ink} fontSize="11" fontWeight={700}>
-        recommandé {chosen.toFixed(1)}
+        {t.recommended(chosen.toFixed(1))}
       </text>
     </svg>
   )
@@ -169,10 +172,11 @@ export function Bars({
 }
 
 export function CurvePreview({ curve, inner, outer, travel = 4 }: { curve: string; inner: number; outer: number; travel?: number }) {
+  const t = useT(chartsText)
   const W = 220
   const H = 160
   const pad = 22
-  const f = (u: number) => (curve === 'progressive' ? Math.pow(u, 1.8) : curve === 'agressive' ? Math.pow(u, 0.6) : u)
+  const f = (u: number) => (curve === 'progressive' ? Math.pow(u, 1.8) : curve === 'aggressive' ? Math.pow(u, 0.6) : u)
   const pts: string[] = []
   for (let k = 0; k <= 60; k++) {
     const mm = (k / 60) * travel
@@ -185,10 +189,10 @@ export function CurvePreview({ curve, inner, outer, travel = 4 }: { curve: strin
       <line x1={pad} y1={H - pad} x2={W - pad} y2={pad} stroke={C.grid} strokeDasharray="3 3" />
       <path d={pts.join(' ')} fill="none" stroke={C.intended} strokeWidth={2.5} />
       <text x={pad} y={H - 6} fill={C.axis} fontSize="10">
-        course
+        {t.travel}
       </text>
       <text x={4} y={pad + 4} fill={C.axis} fontSize="10">
-        sortie
+        {t.output}
       </text>
     </svg>
   )

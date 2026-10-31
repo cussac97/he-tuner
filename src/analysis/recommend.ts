@@ -3,6 +3,8 @@
 // simulation) and count what would have gone wrong — accidental actuations, missed
 // presses, double triggers — and how many milliseconds it would cost.
 
+import { tr } from '../i18n'
+import { recommendText } from '../i18n/results/recommend'
 import { FINGER_NAMES, MODIFIERS, WASD, type Finger, type LayoutKind } from '../lib/layout'
 import type { Settings } from '../lib/store'
 import type { AnyExercise, ExerciseRecord } from '../lib/types'
@@ -37,7 +39,8 @@ import {
 } from './exercises'
 import { analyzeTyping, type LabeledEx, type TypingAnalysis } from './typing'
 
-export type Confidence = 'faible' | 'moyenne' | 'bonne'
+export type Confidence = 'low' | 'medium' | 'high'
+export type AnalogCurve = 'linear' | 'progressive' | 'aggressive'
 
 export interface SimCounts {
   accidental: number
@@ -98,7 +101,7 @@ export interface GamingRec {
 }
 
 export interface AnalogRec {
-  curve: 'linéaire' | 'progressive' | 'agressive'
+  curve: AnalogCurve
   innerDeadzone: number
   outerDeadzone: number
   reasons: string[]
@@ -191,7 +194,7 @@ function bestActuation(
 }
 
 function confidenceFor(n: number, good: number, ok: number): Confidence {
-  return n >= good ? 'bonne' : n >= ok ? 'moyenne' : 'faible'
+  return n >= good ? 'high' : n >= ok ? 'medium' : 'low'
 }
 
 function restFloor(rest: RestAnalysis | null, codes: string[], phase: 'typing' | 'gaming' | 'any'): number {
@@ -207,12 +210,13 @@ function restFloor(rest: RestAnalysis | null, codes: string[], phase: 'typing' |
   return m
 }
 
-const GROUPS: Array<{ label: string; match: (code: string, f: Finger) => boolean }> = [
-  { label: 'Barre espace', match: (c) => c === 'Space' },
-  { label: 'Modificateurs', match: (c) => MODIFIERS.has(c) },
+const GROUPS: Array<{ id: 'space' | 'modifiers'; match: (code: string, f: Finger) => boolean }> = [
+  { id: 'space', match: (c) => c === 'Space' },
+  { id: 'modifiers', match: (c) => MODIFIERS.has(c) },
 ]
 
 export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
+  const tx = tr(recommendText)
   const layout: LayoutKind = settings.layout
   const travel = settings.travel
   const latest = <K extends AnyExercise['kind']>(k: K) =>
@@ -263,6 +267,7 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
   let typingStats: Profile['typingStats'] = null
   const fingerAccidents: Record<string, number> = {}
   const keyAccidents: Record<string, number> = {}
+  let spaceOverride = false
   if (typings.length) {
     const sumKeys = typings.reduce((s, t) => s + t.r.meta.keys.length, 0)
     const counts = { intended: 0, typo: 0, missed: 0, accidental: 0, brush: 0, rest: 0 }
@@ -303,21 +308,13 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
 
     if (unintendedPeaks.length) {
       const p90 = quantile(unintendedPeaks, 0.9)
-      reasons.push(
-        `${unintendedPeaks.length} effleurements involontaires mesurés ; 90 % restent sous ${p90.toFixed(2)} mm. ${
-          A > p90 ? `À ${A.toFixed(1)} mm, ils ne déclenchent plus rien.` : `Un réglage plus profond coûterait plus en réactivité qu’il n’éviterait d’erreurs.`
-        }`,
-      )
+      reasons.push(tx.typing.brushes(unintendedPeaks.length, p90.toFixed(2), A.toFixed(1), A > p90))
     }
     if (intendedPeaks.length) {
       const p5 = quantile(intendedPeaks, 0.05)
-      reasons.push(
-        `Tes vraies frappes descendent au moins à ${p5.toFixed(2)} mm dans 95 % des cas${
-          typingStats.bottomOut > 0.7 ? ` (tu tapes en fond de course ${Math.round(typingStats.bottomOut * 100)} % du temps)` : ''
-        } : aucun risque de frappe ratée à ${A.toFixed(1)} mm.`,
-      )
+      reasons.push(tx.typing.presses(p5.toFixed(2), typingStats.bottomOut > 0.7 ? Math.round(typingStats.bottomOut * 100) : null, A.toFixed(1)))
     }
-    if (mainFloor > 0) reasons.push(`Tes doigts posés appuient jusqu’à ${mainFloor.toFixed(2)} mm : le point d’actuation reste au-dessus avec une marge.`)
+    if (mainFloor > 0) reasons.push(tx.typing.resting(mainFloor.toFixed(2)))
 
     // Per-group overrides
     const overrides: Override[] = []
@@ -333,14 +330,12 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
       if (Math.abs(r.a - A) >= 0.3) {
         const restMax = restFloor(rest, codes, 'any')
         overrides.push({
-          label: g.label,
+          label: tx.groups[g.id],
           codes,
           value: r.a,
-          reason:
-            r.a > A
-              ? `${unintended} contacts involontaires${restMax > 0.2 ? `, ${restMax.toFixed(2)} mm de pression au repos` : ''} : plus profond pour éviter les déclenchements parasites.`
-              : `Frappes franches et aucun contact parasite : peut être plus réactif.`,
+          reason: r.a > A ? tx.typing.overrideDeeper(unintended, restMax > 0.2 ? restMax.toFixed(2) : null) : tx.typing.overrideLighter,
         })
+        if (g.id === 'space') spaceOverride = true
         for (const c of codes) perKey[c] = r.a
       }
     }
@@ -357,7 +352,7 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
           label: FINGER_NAMES[f],
           codes,
           value: r.a,
-          reason: `${un} effleurements sur ${wanted} frappes pour ce doigt : un point plus profond sur ses touches suffit, sans ralentir le reste.`,
+          reason: tx.typing.overrideFinger(un, wanted),
         })
         for (const c of codes) perKey[c] ??= r.a
       }
@@ -377,7 +372,7 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
     if (bestRt && bestRt.c.accidental + bestRt.c.missed + bestRt.c.doubles + 1 < baseErr) {
       rtRec = {
         enabled: true,
-        reason: `Le RT (${bestRt.s.rtRelease.toFixed(2)} mm) éviterait ${baseErr - (bestRt.c.accidental + bestRt.c.missed + bestRt.c.doubles)} erreurs sur tes données (lettres doublées ratées).`,
+        reason: tx.typing.rtOn(bestRt.s.rtRelease.toFixed(2), baseErr - (bestRt.c.accidental + bestRt.c.missed + bestRt.c.doubles)),
       }
     } else {
       const minRt = rtCands.reduce(
@@ -389,9 +384,7 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
       )
       rtRec = {
         enabled: false,
-        reason: `En frappe, le Rapid Trigger n’évite aucune erreur sur tes données${
-          minRt > 0 ? ` et ajouterait jusqu’à ${minRt} doubles déclenchements` : ''
-        }. Garde-le pour le profil jeu.`,
+        reason: tx.typing.rtOff(minRt),
       }
     }
 
@@ -422,8 +415,8 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
     const reasons: string[] = []
     const wasdRest = restFloor(rest, WASD, 'gaming')
     const aGame = rest ? clamp(round1(Math.max(0.3, wasdRest + 0.2)), 0.2, 1.5) : 0.8
-    if (rest) reasons.push(`Doigts posés sur ZQSD/WASD : jusqu’à ${wasdRest.toFixed(2)} mm sans le vouloir → actuation à ${aGame.toFixed(1)} mm, aussi haut que possible sans mouvement parasite.`)
-    else reasons.push(`Sans test « repos », valeur prudente de ${aGame.toFixed(1)} mm. Fais l’exercice pour l’affiner.`)
+    if (rest) reasons.push(tx.gaming.rest(wasdRest.toFixed(2), aGame.toFixed(1)))
+    else reasons.push(tx.gaming.noRest(aGame.toFixed(1)))
 
     // RT sensitivity from plateau stability (hold + strafe plateaus)
     const strafeAnalysisPre = strafeRec ? analyzeStrafe(strafeRec, []) : null
@@ -432,16 +425,16 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
     const ddMax = dd.length ? quantile(dd, 0.95) : null
     let rtRelease = ddMax !== null ? clamp(ceil05(ddMax + 0.05), 0.1, 1.0) : 0.3
     if (ddMax !== null)
-      reasons.push(`En maintien, ta touche oscille jusqu’à ${ddMax.toFixed(2)} mm : une sensibilité RT de ${rtRelease.toFixed(2)} mm ne relâchera jamais par erreur.`)
+      reasons.push(tx.gaming.hold(ddMax.toFixed(2), rtRelease.toFixed(2)))
     let rtPress = rtRelease
 
     // Fast taps: make sure the press sensitivity catches every tap
     const repeatScen = (a: number) => [
-      { name: 'Actuel (estimé)', s: currentA !== null ? fixed(currentA) : fixed(1.5) },
-      { name: 'Sans RT · 1.5 mm', s: fixed(1.5) },
-      { name: `Sans RT · ${a.toFixed(1)} mm`, s: fixed(a) },
+      { name: tx.scenarios.current, s: currentA !== null ? fixed(currentA) : fixed(1.5) },
+      { name: tx.scenarios.noRt('1.5'), s: fixed(1.5) },
+      { name: tx.scenarios.noRt(a.toFixed(1)), s: fixed(a) },
       { name: `RT ${rtRelease.toFixed(2)}`, s: rapid(a, rtPress, rtRelease) },
-      { name: `RT ${rtRelease.toFixed(2)} continu`, s: rapid(a, rtPress, rtRelease, true) },
+      { name: tx.scenarios.rtContinuous(rtRelease.toFixed(2)), s: rapid(a, rtPress, rtRelease, true) },
     ]
     let repeat = repeatRec ? analyzeRepeat(repeatRec, repeatScen(aGame)) : null
     let continuous = false
@@ -449,7 +442,7 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
       const minLift = quantile(repeat.lifts, 0.05)
       if (minLift < rtPress * 1.6) {
         rtPress = clamp(ceil05(Math.max(0.1, minLift * 0.6)), 0.1, rtRelease)
-        reasons.push(`Tes tapes les plus rapides ne remontent que de ${minLift.toFixed(2)} mm : sensibilité d’appui réduite à ${rtPress.toFixed(2)} mm pour toutes les capter.`)
+        reasons.push(tx.gaming.fastTaps(minLift.toFixed(2), rtPress.toFixed(2)))
         repeat = analyzeRepeat(repeatRec!, repeatScen(aGame))
       }
       const nonCont = repeat!.results[3]
@@ -457,20 +450,18 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
       const noRt = repeat!.results[2]
       const missNoRt = repeat!.taps.length - noRt.registered
       if (missNoRt > 0)
-        reasons.push(
-          `À ${aGame.toFixed(1)} mm sans Rapid Trigger, ${missNoRt} de tes ${repeat!.taps.length} tapes rapides seraient perdues : entre deux tapes tu ne remontes qu’à ${median(repeat!.minima).toFixed(2)} mm en moyenne. Le RT les capte toutes.`,
-        )
+        reasons.push(tx.gaming.lostTaps(aGame.toFixed(1), missNoRt, repeat!.taps.length, median(repeat!.minima).toFixed(2)))
       if (cont.registered > nonCont.registered || (Number.isFinite(cont.latency) && nonCont.latency - cont.latency > 2)) {
         continuous = true
-        reasons.push(`Le RT continu capte ${cont.registered - nonCont.registered > 0 ? `${cont.registered - nonCont.registered} tapes de plus` : `tes tapes ${Math.round(nonCont.latency - cont.latency)} ms plus tôt`} : à activer.`)
+        reasons.push(tx.gaming.continuous(cont.registered - nonCont.registered, Math.round(nonCont.latency - cont.latency)))
       }
     }
 
     // Counter-strafe scenarios
     const scen: StrafeScenario[] = [
-      { name: 'Actuel (estimé)', s: currentA !== null ? (rtDetected?.detected && rtDetected.release ? rapid(currentA, rtDetected.release) : fixed(currentA)) : fixed(1.5), socd: 'none' },
-      { name: 'Sans RT · 1.5 mm', s: fixed(1.5), socd: 'none' },
-      { name: 'Recommandé', s: rapid(aGame, rtPress, rtRelease, continuous), socd: 'none' },
+      { name: tx.scenarios.current, s: currentA !== null ? (rtDetected?.detected && rtDetected.release ? rapid(currentA, rtDetected.release) : fixed(currentA)) : fixed(1.5), socd: 'none' },
+      { name: tx.scenarios.noRt('1.5'), s: fixed(1.5), socd: 'none' },
+      { name: tx.scenarios.recommended, s: rapid(aGame, rtPress, rtRelease, continuous), socd: 'none' },
       { name: '+ Snappy Tappy', s: rapid(aGame, rtPress, rtRelease, continuous), socd: 'last' },
       { name: '+ Rappy Snappy', s: rapid(aGame, rtPress, rtRelease, continuous), socd: 'deeper' },
     ]
@@ -482,15 +473,13 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
       const snappy = strafe.results[3]
       const noRt = strafe.results[1]
       if (Number.isFinite(noRt.stopDelay) && Number.isFinite(recd.stopDelay))
-        reasons.push(`Arrêts : ton personnage s’arrête ${Math.round(noRt.stopDelay - recd.stopDelay)} ms plus tôt avec le RT qu’avec un réglage fixe à 1.5 mm.`)
+        reasons.push(tx.gaming.stops(Math.round(noRt.stopDelay - recd.stopDelay)))
       socdGain = Number.isFinite(recd.switchDelay) && Number.isFinite(snappy.switchDelay) ? recd.switchDelay - snappy.switchDelay : null
       if (strafe.overlapRate > 0.3 && socdGain !== null && socdGain > 8) {
         socd = 'last'
-        reasons.push(
-          `Dans ${Math.round(strafe.overlapRate * 100)} % de tes changements de direction, tu appuies sur la nouvelle touche avant de lâcher l’ancienne (≈${Math.round(strafe.overlapMedian)} ms). Un mode SOCD te ferait gagner ≈${Math.round(socdGain)} ms par changement.`,
-        )
+        reasons.push(tx.gaming.socdYes(Math.round(strafe.overlapRate * 100), Math.round(strafe.overlapMedian), Math.round(socdGain)))
       } else if (strafe.transitions) {
-        reasons.push(`Tes changements de direction sont propres (${Math.round(strafe.overlapRate * 100)} % de chevauchement) : pas besoin de SOCD.`)
+        reasons.push(tx.gaming.socdNo(Math.round(strafe.overlapRate * 100)))
       }
     }
 
@@ -516,70 +505,46 @@ export function buildProfile(all: AnyExercise[], settings: Settings): Profile {
   if (aa) {
     const [b0, b1, b2, b3] = aa.bands
     const mid = mean([b1.rms, b2.rms].filter(Number.isFinite))
-    let curve: AnalogRec['curve'] = 'linéaire'
+    let curve: AnalogCurve = 'linear'
     const reasons: string[] = []
     if (Number.isFinite(b0.rms) && b0.rms > mid * 1.35) {
       curve = 'progressive'
-      reasons.push(`Ton erreur est ${(b0.rms / mid).toFixed(1)}× plus grande dans le premier quart de course : une courbe progressive (plus douce au début) te donnera plus de finesse à faible vitesse.`)
+      reasons.push(tx.analog.progressive((b0.rms / mid).toFixed(1)))
     } else if (Number.isFinite(b3.rms) && b3.rms > mid * 1.35) {
-      curve = 'agressive'
-      reasons.push(`Tu as du mal à tenir les valeurs proches du fond : une courbe plus agressive atteint 100 % plus tôt.`)
-    } else reasons.push(`Ta précision est homogène sur toute la course : une courbe linéaire est idéale.`)
+      curve = 'aggressive'
+      reasons.push(tx.analog.aggressive)
+    } else reasons.push(tx.analog.linear)
     const inner = Number.isFinite(b0.bias) && b0.bias > 0.15 ? clamp(round1(b0.bias + 0.1), 0.1, 0.8) : 0.1
     const outer = Number.isFinite(b3.bias) && b3.bias < -0.15 ? clamp(round1(-b3.bias + 0.1), 0.1, 0.8) : 0.1
-    if (inner > 0.1) reasons.push(`Tu dépasses souvent les petites valeurs : zone morte basse de ${inner.toFixed(1)} mm.`)
-    if (outer > 0.1) reasons.push(`Tu restes souvent sous la cible près du fond : zone morte haute de ${outer.toFixed(1)} mm pour atteindre 100 % sans écraser.`)
-    reasons.push(`Délai de suivi mesuré : ${aa.lag} ms ; ${Math.round(aa.inBand * 100)} % du temps à ±0,3 mm de la cible.`)
+    if (inner > 0.1) reasons.push(tx.analog.inner(inner.toFixed(1)))
+    if (outer > 0.1) reasons.push(tx.analog.outer(outer.toFixed(1)))
+    reasons.push(tx.analog.lag(aa.lag, Math.round(aa.inBand * 100)))
     analog = { curve, innerDeadzone: inner, outerDeadzone: outer, reasons, analysis: aa }
   }
 
   // ---------- ideas (advanced layers) ----------
   const ideas: Idea[] = []
-  if (typing?.overrides.some((o) => o.label === 'Barre espace'))
-    ideas.push({
-      tag: 'Frappe',
-      title: 'Barre espace à part',
-      body: 'Tes pouces se posent sur la barre espace. Donne-lui son propre point d’actuation (réglage par touche) plutôt que de durcir tout le clavier.',
-    })
+  const ti = tx.ideas
+  if (spaceOverride) ideas.push({ tag: ti.tags.typing, ...ti.space })
   if (gaming && rest) {
     const shiftRest = restFloor(rest, ['ShiftLeft', 'ControlLeft'], 'gaming')
     if (shiftRest > 0.3)
       ideas.push({
-        tag: 'Jeu',
-        title: 'Shift / Ctrl plus profonds en jeu',
-        body: `Ton auriculaire repose à ${shiftRest.toFixed(2)} mm sur Shift/Ctrl. Mets ces touches à ${round1(shiftRest + 0.6).toFixed(1)} mm dans le profil jeu pour éviter les accroupissements / marches involontaires.`,
+        tag: ti.tags.gaming,
+        title: ti.shift.title,
+        body: ti.shift.body(shiftRest.toFixed(2), round1(shiftRest + 0.6).toFixed(1)),
       })
   }
-  if (gaming)
-    ideas.push({
-      tag: 'Couches',
-      title: 'Deux profils, un raccourci',
-      body: 'Garde un profil « Frappe » (actuation plus profonde, RT désactivé) et un profil « Jeu » (actuation haute, RT). Assigne un raccourci Fn pour basculer : c’est le meilleur des deux mondes.',
-    })
-  if (gaming)
-    ideas.push({
-      tag: 'Jeu',
-      title: 'Dynamic Keystroke sur la marche',
-      body: 'Dans les jeux sans analogique, un DKS sur Z/W peut envoyer « marcher » à mi-course et « courir » au fond : une seule touche, deux vitesses.',
-    })
-  if (gaming?.socd !== 'none')
-    ideas.push({
-      tag: 'Règles',
-      title: 'SOCD : vérifie le règlement',
-      body: 'Counter-Strike 2 refuse les fonctions de type Snap Tap/SOCD sur les serveurs officiels de Valve depuis 2024, et plusieurs ligues aussi. Garde un profil sans SOCD pour ces jeux.',
-    })
+  if (gaming) ideas.push({ tag: ti.tags.layers, ...ti.profiles })
+  if (gaming) ideas.push({ tag: ti.tags.gaming, ...ti.dks })
+  if (gaming?.socd !== 'none') ideas.push({ tag: ti.tags.rules, ...ti.socd })
   if (typingStats && typingStats.bottomOut > 0.85)
     ideas.push({
-      tag: 'Confort',
-      title: 'Tu frappes en fond de course',
-      body: `${Math.round(typingStats.bottomOut * 100)} % de tes frappes vont jusqu’au fond. Avec un point d’actuation à ${typing?.actuation.toFixed(1)} mm, tu peux t’entraîner à frapper plus léger : moins de fatigue, et le clavier suit.`,
+      tag: ti.tags.comfort,
+      title: ti.bottomOut.title,
+      body: ti.bottomOut.body(Math.round(typingStats.bottomOut * 100), String(typing?.actuation.toFixed(1))),
     })
-  if (analog)
-    ideas.push({
-      tag: 'Analogique',
-      title: `Courbe ${analog.curve}`,
-      body: 'Pour le mode manette (jeux de course, déplacements fins) : applique la courbe et les zones mortes recommandées au profil analogique.',
-    })
+  if (analog) ideas.push({ tag: ti.tags.analog, title: ti.analog.title(analog.curve), body: ti.analog.body })
 
   return {
     hasData: all.length > 0,

@@ -1,8 +1,10 @@
 // Word-by-word typing test logic, shared by the UI and the sample-session generator.
 
+import type { Lang } from '../i18n'
 import type { TypingClass, TypingKey } from './types'
 
-// Common French words, spelled properly. With "accents" off they are folded to ASCII.
+// Common words per language, lowercase and spelled properly. With "accents" off they are
+// folded to plain a-z (é → e, ä → a, ñ → n, ß → ss).
 const FR = `le de un à être et en avoir que pour dans ce il qui ne sur se pas plus pouvoir par je avec tout faire son mettre
 autre on mais nous comme où si leur y dire elle devoir avant deux même prendre aussi celui donner bien fois vous encore
 nouveau aller cela entre premier vouloir déjà grand mon me moins aucun lui temps très savoir falloir voir quelque sans raison
@@ -27,16 +29,47 @@ open example begin life always those both paper together got group often run imp
 walk white sea began grow took river four carry state once book hear stop without second later miss idea enough eat face watch
 far indian real almost let above girl sometimes mountain cut young talk soon list song being leave family keyboard switch press`
 
-export const WORDS = {
+const DE = `der die und in den von zu das mit sich des auf für ist im dem nicht ein eine als auch es an werden aus er hat dass
+sie nach wird bei einer um am sind noch wie einem über einen so zum war haben nur oder aber vor zur bis mehr durch man sein
+wurde hier jahr zwei mal kann ihr unter da sehr ganz gut schon wieder immer neu alle können müssen sollen wollen gehen kommen
+machen sagen geben sehen stehen finden bleiben liegen heißen denken nehmen dürfen glauben halten nennen zeigen führen sprechen
+bringen leben fahren meinen fragen kennen stellen spielen arbeiten brauchen folgen lernen verstehen setzen bekommen beginnen
+erzählen versuchen schreiben laufen erklären sitzen ziehen fallen gehören treffen suchen legen tragen schaffen lesen verlieren
+erkennen reden bilden anfangen erwarten wohnen warten helfen gewinnen schließen fühlen bieten erinnern öffnen hören möchte
+würde wäre zeit mann frau kind tag welt land stadt haus hand auge weg wort frage seite arbeit schule spiel tisch tür fenster
+straße wasser brot buch brief musik farbe nacht morgen abend woche monat freund vater mutter bruder schwester tastatur taste
+finger maus bildschirm schön groß größe grün müde später während natürlich fährt läuft zurück früh spät glück bücher häuser
+männer äpfel böse höhe könig übung prüfung schlüssel fuß weiß heiß süß außen draußen spaß rot blau gelb schwarz kalt warm
+schnell langsam stark leicht klar einfach weit nah oben unten links rechts vielleicht genug nichts etwas jetzt heute`
+
+const ES = `de la que el en y a los se del las un por con no una su para es al lo como más pero sus le ya o este sí porque
+esta entre cuando muy sin sobre también me hasta hay donde quien desde todo nos durante todos uno les ni contra otros ese eso
+ante ellos esto mí antes algunos qué unos yo otro otras otra él tanto esa estos mucho nada muchos cual poco ella estar estas
+algo nosotros mi mis tú te tu está están cómo dónde cuándo así después además país días año niño niña mañana español teléfono
+música árbol fácil difícil rápido último página número público política región información canción corazón ciudad verdad
+pequeño señor compañía montaña baño sueño años camión acción opción razón lección jardín inglés café sofá bebé casa tiempo
+vida mundo hombre mujer día trabajo agua mano parte noche cosa ojo palabra familia libro mesa puerta ventana camino tierra
+fuego luz color rojo verde azul blanco negro amarillo frío caliente tecla teclado dedo ratón pantalla ser haber tener hacer
+poder decir ir ver dar saber querer llegar pasar deber poner parecer quedar creer hablar llevar dejar seguir encontrar
+llamar venir pensar salir volver tomar conocer vivir sentir tratar mirar contar empezar esperar buscar entrar escribir
+perder entender pedir recibir recordar terminar aparecer conseguir servir necesitar leer caer cambiar crear abrir oír
+acabar ganar traer morir aceptar explicar`
+
+export const WORDS: Record<Lang, string[]> = {
   fr: [...new Set(FR.split(/\s+/).filter(Boolean))],
   en: [...new Set(EN.split(/\s+/).filter(Boolean))],
+  de: [...new Set(DE.split(/\s+/).filter(Boolean))],
+  es: [...new Set(ES.split(/\s+/).filter(Boolean))],
 }
+
+/** true when the language's words use letters beyond a-z (the accents toggle is then useful) */
+export const hasAccents = (lang: Lang) => WORDS[lang].some((w) => /[^a-z]/.test(w))
 
 export function stripAccents(w: string): string {
-  return w.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return w.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ß/g, 'ss')
 }
 
-export function randomWords(lang: 'fr' | 'en', n: number, rnd: () => number = Math.random, accents = true): string[] {
+export function randomWords(lang: Lang, n: number, rnd: () => number = Math.random, accents = true): string[] {
   const list = WORDS[lang]
   const out: string[] = []
   for (let i = 0; i < n; i++) {
@@ -47,11 +80,12 @@ export function randomWords(lang: 'fr' | 'en', n: number, rnd: () => number = Ma
   return out
 }
 
-/** Browsers only compose dead keys (^ then e → ê) when a text field has focus; our
- *  test listens to raw keydowns, so we compose ourselves. A letter typed right after a
- *  dead key becomes the expected accented letter when it is its base letter. */
+/** Browsers only compose dead keys (^ then e → ê, ´ then a → á, ¨ then u → ü) when a text
+ *  field has focus; our test listens to raw keydowns, so we compose ourselves. The event does
+ *  not say which accent the dead key carries, so a letter typed right after it becomes the
+ *  expected accented letter whenever it is that letter's base. */
 export function composeDead(key: string, expected: string | null): string {
-  if (key === ' ') return '^'
+  if (key === ' ') return expected && '^´`¨~'.includes(expected) ? expected : '^'
   if (key.normalize('NFD').length > 1) return key // the browser already composed it
   const k = key.toLowerCase()
   if (expected && expected !== k && expected.normalize('NFD')[0] === k) return expected

@@ -6,11 +6,14 @@ import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } fro
 import { median } from '../analysis/core'
 import { analyzeTyping } from '../analysis/typing'
 import { KeyboardViz } from '../components/KeyboardViz'
+import { LangSeg } from '../components/LangPicker'
 import { setFocusMode } from '../components/ui'
+import { tr, useLang, useT } from '../i18n'
+import { typingText } from '../i18n/games/typing'
 import { codeForChar } from '../lib/layout'
 import { store, useStore } from '../lib/store'
 import type { TypingKey, TypingMeta } from '../lib/types'
-import { composeDead, randomWords, TypingEngine } from '../lib/typing'
+import { composeDead, hasAccents, randomWords, TypingEngine } from '../lib/typing'
 import { clampScore, saveExercise, useNow } from './common'
 import type { GameProps } from './types'
 
@@ -18,11 +21,12 @@ const LINE_H = 30 * 1.7
 
 export function TypingGame({ quick, onComplete }: GameProps) {
   const s = useStore()
-  const [lang, setLang] = useState(s.settings.lang)
+  const lang = useLang()
+  const t = useT(typingText)
   const [duration, setDuration] = useState(quick ? 30 : s.settings.duration)
   const [accents, setAccents] = useState(true)
   const [seed, setSeed] = useState(0)
-  const words = useMemo(() => randomWords(lang, 300, Math.random, lang === 'fr' && accents), [lang, accents, seed])
+  const words = useMemo(() => randomWords(lang, 300, Math.random, accents), [lang, accents, seed])
   const [phase, setPhase] = useState<'ready' | 'running' | 'saving'>('ready')
   const engine = useRef<TypingEngine | null>(null)
   const startT = useRef(0)
@@ -77,20 +81,23 @@ export function TypingGame({ quick, onComplete }: GameProps) {
     const a = analyzeTyping(rec, store.settings.layout)
     const acts = Object.values(a.actPerKey).flatMap((x) => new Array(x.n).fill(x.a) as number[])
     const cur = acts.length ? median(acts) : NaN
+    const wpm = Math.round(st.wpm)
+    // getters: the score screen follows a language change
     onComplete({
       score: clampScore(st.wpm * st.accuracy * st.accuracy * 7.5),
-      headline:
-        st.wpm >= 100
-          ? `${Math.round(st.wpm)} mots/min. Tes doigts vont plus vite que ton ombre.`
-          : st.wpm >= 60
-            ? `${Math.round(st.wpm)} mots/min, solide !`
-            : `${Math.round(st.wpm)} mots/min : on mesure surtout comment tu frappes, pas la vitesse.`,
-      stats: [
-        { label: 'Vitesse', value: String(Math.round(st.wpm)), unit: 'mots/min' },
-        { label: 'Précision', value: String(Math.round(st.accuracy * 100)), unit: '%' },
-        { label: a.measured ? 'Actuation lue' : 'Actuation estimée', value: Number.isFinite(cur) ? cur.toFixed(2) : '—', unit: 'mm' },
-        { label: 'Caractères parasites', value: String(a.counts.accidental) },
-      ],
+      get headline() {
+        const t = tr(typingText)
+        return st.wpm >= 100 ? t.headlineFast(wpm) : st.wpm >= 60 ? t.headlineGood(wpm) : t.headlineSlow(wpm)
+      },
+      get stats() {
+        const t = tr(typingText)
+        return [
+          { label: t.speed, value: String(wpm), unit: t.wpm },
+          { label: t.accuracy, value: String(Math.round(st.accuracy * 100)), unit: '%' },
+          { label: a.measured ? t.actRead : t.actEstimated, value: Number.isFinite(cur) ? cur.toFixed(2) : '—', unit: 'mm' },
+          { label: t.stray, value: String(a.counts.accidental) },
+        ]
+      },
       extra: <WpmChart keys={eng.keys} t0={startT.current} seconds={duration} color={main} />,
     })
   }
@@ -163,25 +170,21 @@ export function TypingGame({ quick, onComplete }: GameProps) {
 
   return (
     <div className="type-wrap">
-      <motion.div className="type-bar" animate={{ opacity: phase === 'ready' && !quick ? 1 : 0 }} style={{ pointerEvents: phase === 'ready' && !quick ? 'auto' : 'none' }}>
-        <div className="seg">
-          {[15, 30, 60].map((d) => (
-            <button key={d} className={duration === d ? 'on' : ''} onClick={() => (setDuration(d), store.updateSettings({ duration: d }))}>
-              {d}s
-            </button>
-          ))}
-        </div>
-        <div className="seg">
-          {(['fr', 'en'] as const).map((l) => (
-            <button key={l} className={lang === l ? 'on' : ''} onClick={() => (setLang(l), store.updateSettings({ lang: l }))}>
-              {l === 'fr' ? 'français' : 'english'}
-            </button>
-          ))}
-        </div>
-        {lang === 'fr' && (
+      <motion.div className="type-bar" animate={{ opacity: phase === 'ready' ? 1 : 0 }} style={{ pointerEvents: phase === 'ready' ? 'auto' : 'none' }}>
+        {!quick && (
+          <div className="seg">
+            {[15, 30, 60].map((d) => (
+              <button key={d} className={duration === d ? 'on' : ''} onClick={() => (setDuration(d), store.updateSettings({ duration: d }))}>
+                {d}s
+              </button>
+            ))}
+          </div>
+        )}
+        <LangSeg />
+        {hasAccents(lang) && (
           <div className="seg">
             <button className={accents ? 'on' : ''} onClick={() => setAccents((a) => !a)}>
-              accents {accents ? 'é' : 'e'}
+              {t.accents} {accents ? t.accentOn : t.accentOff}
             </button>
           </div>
         )}
@@ -192,10 +195,10 @@ export function TypingGame({ quick, onComplete }: GameProps) {
         {phase === 'running' && (
           <span>
             {liveWpm}
-            <small> mots/min</small>
+            <small> {t.wpm}</small>
           </span>
         )}
-        {phase === 'saving' && <small>analyse de tes frappes…</small>}
+        {phase === 'saving' && <small>{t.analyzing}</small>}
       </div>
 
       <div className={`words ${!winFocus ? 'blur' : ''}`}>
@@ -241,14 +244,14 @@ export function TypingGame({ quick, onComplete }: GameProps) {
             transition={{ type: 'tween', ease: 'easeOut', duration: phase === 'running' ? 0.09 : 0 }}
           />
         </div>
-        {!winFocus && <div className="focus-hint">Clique ici ou appuie sur une touche pour reprendre</div>}
+        {!winFocus && <div className="focus-hint">{t.focusHint}</div>}
       </div>
 
       <div className="type-foot">
         <span>
-          <span className="kbd">tab</span> recommencer
+          <span className="kbd">tab</span> {t.restart}
         </span>
-        <span>{phase === 'ready' ? 'commence à taper quand tu veux' : `${eng?.keys.filter((k) => k.cls !== 'other').length ?? 0} frappes`}</span>
+        <span>{phase === 'ready' ? t.startWhenever : t.presses(eng?.keys.filter((k) => k.cls !== 'other').length ?? 0)}</span>
       </div>
 
       <motion.div animate={{ opacity: phase === 'running' ? 0.35 : 0.8 }} style={{ maxWidth: 560, margin: '34px auto 0' }}>
@@ -260,6 +263,7 @@ export function TypingGame({ quick, onComplete }: GameProps) {
 
 /** Speed over the test, monkeytype-style: wpm, raw and errors per second. */
 function WpmChart({ keys, t0, seconds, color }: { keys: TypingKey[]; t0: number; seconds: number; color: string }) {
+  const t = useT(typingText)
   const pts = useMemo(() => {
     const out: Array<{ s: number; wpm: number; raw: number; err: number }> = []
     for (let s = 1; s <= seconds; s++) {
@@ -300,7 +304,7 @@ function WpmChart({ keys, t0, seconds, color }: { keys: TypingKey[]; t0: number;
           </motion.text>
         ))}
       <text x={W - pad} y={H - 8} textAnchor="end" fontSize="11" fill="var(--ink-3)">
-        secondes · ━ mots/min · ┅ brut · × fautes
+        {t.chartLegend}
       </text>
     </svg>
   )

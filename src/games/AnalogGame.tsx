@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { analyzeAnalog } from '../analysis/exercises'
-
+import { tr, useT } from '../i18n'
+import { analogText } from '../i18n/games/analog'
 import { demo } from '../lib/demo'
 import { keyLabel } from '../lib/layout'
 import { recorder } from '../lib/recorder'
@@ -15,6 +16,7 @@ const BAND = 0.3
 
 export function AnalogGame({ quick, onComplete }: GameProps) {
   const s = useStore()
+  const t = useT(analogText)
   const travel = s.settings.travel
   const DURATION = quick ? 14000 : 20000
   const meta = useRef<AnalogMeta>({ code: ANALOG_CODE, t0: performance.now(), path: [] })
@@ -73,18 +75,32 @@ export function AnalogGame({ quick, onComplete }: GameProps) {
         demo.slowCode = null
         saveExercise('analog', t0, performance.now(), meta.current).then((rec) => {
           const a = analyzeAnalog(rec)
+          // getters: the score screen follows a language change
           onComplete(
             a
               ? {
                   score: clampScore(a.inBand * 1000),
-                  headline: a.inBand > 0.85 ? 'Contrôle chirurgical de la course.' : a.inBand > 0.6 ? 'Bon contrôle, quelques écarts.' : 'Le dosage à mi-course est difficile pour toi : on adaptera la courbe.',
-                  stats: [
-                    { label: 'Dans la zone', value: String(Math.round(a.inBand * 100)), unit: '%' },
-                    { label: 'Erreur moyenne', value: a.rms.toFixed(2), unit: 'mm' },
-                    { label: 'Délai de suivi', value: String(a.lag), unit: 'ms' },
-                  ],
+                  get headline() {
+                    const m = tr(analogText)
+                    return a.inBand > 0.85 ? m.headlineGreat : a.inBand > 0.6 ? m.headlineGood : m.headlineHard
+                  },
+                  get stats() {
+                    const m = tr(analogText)
+                    return [
+                      { label: m.inZone, value: String(Math.round(a.inBand * 100)), unit: '%' },
+                      { label: m.avgError, value: a.rms.toFixed(2), unit: 'mm' },
+                      { label: m.lag, value: String(a.lag), unit: 'ms' },
+                    ]
+                  },
                 }
-              : { score: 0, headline: 'Pas assez de données : garde la touche active pendant le chrono.', stats: [], failed: true },
+              : {
+                  score: 0,
+                  get headline() {
+                    return tr(analogText).failed
+                  },
+                  stats: [],
+                  failed: true,
+                },
           )
         })
         return
@@ -104,20 +120,20 @@ export function AnalogGame({ quick, onComplete }: GameProps) {
       </div>
       <div className="col" style={{ textAlign: 'left', gap: 18 }}>
         <div className="stat">
-          <span className="label">Temps</span>
+          <span className="label">{t.time}</span>
           <span className="value num" ref={timeEl}>
             {(DURATION / 1000).toFixed(1)}
           </span>
         </div>
         <div className="stat">
-          <span className="label">Dans la zone</span>
+          <span className="label">{t.inZone}</span>
           <span className="value" ref={scoreEl} style={{ color: main }}>
             —
           </span>
         </div>
         <span className="muted">
-          Touche <span className="kbd">{keyLabel(ANALOG_CODE)}</span> — enfonce plus ou moins
-          {demo.enabled && <><br />(démo : maintenir = descendre)</>}
+          {t.key} <span className="kbd">{keyLabel(ANALOG_CODE)}</span> — {t.howTo}
+          {demo.enabled && <><br />{t.demoHint}</>}
         </span>
       </div>
     </div>

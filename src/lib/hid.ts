@@ -10,6 +10,8 @@
 //
 // Every report is a snapshot of the pressed keys; absent keys are at rest.
 
+import { tr } from '../i18n'
+import { deviceText } from '../i18n/app/device'
 import { hidToCode } from './hidCodes'
 import { recorder, type SnapshotEntry } from './recorder'
 
@@ -66,6 +68,14 @@ export function decodeV1(buf: Uint8Array): DecodedEntry[] {
   return out
 }
 
+/** Unrecognized key seen in a report; `row` / `col` are -1 when the protocol has no matrix position. */
+export interface UnknownKey {
+  raw: number
+  row: number
+  col: number
+}
+
+// Status text is exposed through getters so it follows the interface language.
 export type HidStatus =
   | { state: 'unsupported' }
   | { state: 'idle' }
@@ -77,7 +87,7 @@ class WootingHid {
   device: HIDDevice | null = null
   status: HidStatus = typeof navigator !== 'undefined' && 'hid' in navigator ? { state: 'idle' } : { state: 'unsupported' }
   protocol: Protocol = 'v2'
-  unknownKeys = new Map<string, string>()
+  unknownKeys = new Map<string, UnknownKey>()
   lastDecoded: DecodedEntry[] = []
   private listeners = new Set<() => void>()
 
@@ -123,7 +133,12 @@ class WootingHid {
       if (!dev) {
         this.set(
           devices.length
-            ? { state: 'error', message: 'Interface analogique introuvable sur ce périphérique.' }
+            ? {
+                state: 'error',
+                get message() {
+                  return tr(deviceText).noAnalogInterface
+                },
+              }
             : { state: 'idle' },
         )
         return
@@ -148,11 +163,15 @@ class WootingHid {
     dev.addEventListener('inputreport', this.onReport)
     navigator.hid.addEventListener('disconnect', this.onDisconnect)
     recorder.setSource('hid')
+    const v2 = this.protocol === 'v2'
     this.set({
       state: 'connected',
       name: dev.productName || 'Wooting',
       productId: dev.productId,
-      protocol: this.protocol === 'v2' ? 'analogique V2 (0xFF53, 10 bits)' : 'analogique V1 (0xFF54, 8 bits)',
+      get protocol() {
+        const t = tr(deviceText)
+        return v2 ? t.protocolV2 : t.protocolV1
+      },
     })
   }
 
@@ -172,7 +191,12 @@ class WootingHid {
       this.device = null
       recorder.ingestSnapshot(performance.now(), [])
       recorder.setSource('none')
-      this.set({ state: 'error', message: 'Clavier déconnecté.' })
+      this.set({
+        state: 'error',
+        get message() {
+          return tr(deviceText).disconnected
+        },
+      })
     }
   }
 
@@ -186,8 +210,7 @@ class WootingHid {
     const entries: SnapshotEntry[] = []
     for (const k of decoded) {
       if (!k.code) {
-        const id = k.row >= 0 ? `0x${k.raw.toString(16)} (ligne ${k.row}, col ${k.col})` : `0x${k.raw.toString(16)}`
-        this.unknownKeys.set(id, id)
+        this.unknownKeys.set(`${k.raw}:${k.row}:${k.col}`, { raw: k.raw, row: k.row, col: k.col })
         continue
       }
       entries.push([k.code, k.value * travel, k.actuated])

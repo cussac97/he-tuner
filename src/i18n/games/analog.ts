@@ -1,0 +1,60 @@
+// AnalogGame: side panel and the score screen.
+
+import { messages } from '..'
+
+export const analogText = messages(
+  {
+    headlineGreat: 'Surgical control over key travel.',
+    headlineGood: 'Good control, a few slips.',
+    headlineHard: 'Holding a mid-travel depth is hard for you: we’ll adapt the curve.',
+    failed: 'Not enough data: keep working the key until the timer runs out.',
+    inZone: 'In the zone',
+    avgError: 'Average error',
+    lag: 'Tracking lag',
+    time: 'Time',
+    key: 'Key',
+    howTo: 'press more or less deep',
+    demoHint: '(demo: hold = go down)',
+  },
+  {
+    fr: {
+      headlineGreat: 'Contrôle chirurgical de la course.',
+      headlineGood: 'Bon contrôle, quelques écarts.',
+      headlineHard: 'Le dosage à mi-course est difficile pour toi : on adaptera la courbe.',
+      failed: 'Pas assez de données : garde la touche active pendant le chrono.',
+      inZone: 'Dans la zone',
+      avgError: 'Erreur moyenne',
+      lag: 'Délai de suivi',
+      time: 'Temps',
+      key: 'Touche',
+      howTo: 'enfonce plus ou moins',
+      demoHint: '(démo : maintenir = descendre)',
+    },
+    de: {
+      headlineGreat: 'Chirurgische Kontrolle über den Tastenweg.',
+      headlineGood: 'Gute Kontrolle, ein paar Ausreißer.',
+      headlineHard: 'Eine halbe Tiefe zu dosieren fällt dir schwer – wir passen die Kurve an.',
+      failed: 'Nicht genug Daten: Bleib auf der Taste, bis die Zeit abläuft.',
+      inZone: 'In der Zone',
+      avgError: 'Mittlerer Fehler',
+      lag: 'Folgeverzögerung',
+      time: 'Zeit',
+      key: 'Taste',
+      howTo: 'mehr oder weniger tief drücken',
+      demoHint: '(Demo: halten = runter)',
+    },
+    es: {
+      headlineGreat: 'Control quirúrgico del recorrido de la tecla.',
+      headlineGood: 'Buen control, con algunos desvíos.',
+      headlineHard: 'Dosificar a media profundidad te cuesta: adaptaremos la curva.',
+      failed: 'No hay suficientes datos: mantén la tecla activa mientras corre el tiempo.',
+      inZone: 'En la zona',
+      avgError: 'Error medio',
+      lag: 'Retardo de seguimiento',
+      time: 'Tiempo',
+      key: 'Tecla',
+      howTo: 'púlsala más o menos a fondo',
+      demoHint: '(demo: mantener = bajar)',
+    },
+  },
+)

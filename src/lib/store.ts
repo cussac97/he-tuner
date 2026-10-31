@@ -9,7 +9,6 @@ import type { AnyExercise, ExerciseKind } from './types'
 export interface Settings {
   travel: number
   layout: LayoutKind
-  lang: 'fr' | 'en'
   duration: number
   /** 0 = most responsive, 1 = safest */
   safety: number
@@ -17,7 +16,7 @@ export interface Settings {
   refActuation: number
 }
 
-const DEFAULTS: Settings = { travel: 4.0, layout: 'iso', lang: 'fr', duration: 60, safety: 0.5, refActuation: 1.5 }
+const DEFAULTS: Settings = { travel: 4.0, layout: 'iso', duration: 60, safety: 0.5, refActuation: 1.5 }
 
 function loadSettings(): Settings {
   try {

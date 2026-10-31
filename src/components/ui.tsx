@@ -1,5 +1,7 @@
 import { animate, motion, useInView, type HTMLMotionProps, type Variants } from 'framer-motion'
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useT } from '../i18n'
+import { uiText } from '../i18n/app/ui'
 import { Icon } from './icons'
 
 export const ease = [0.2, 0.8, 0.2, 1] as const
@@ -188,7 +190,8 @@ export function useFocusMode() {
 }
 
 /** Collapsible details section with a smooth height animation. */
-export function Why({ children, label = 'Pourquoi' }: { children: ReactNode; label?: string }) {
+export function Why({ children, label }: { children: ReactNode; label?: string }) {
+  const t = useT(uiText)
   const [open, setOpen] = useState(false)
   return (
     <div>
@@ -196,7 +199,7 @@ export function Why({ children, label = 'Pourquoi' }: { children: ReactNode; lab
         <motion.span animate={{ rotate: open ? 90 : 0 }} transition={spring} style={{ display: 'inline-flex' }}>
           <Icon name="chevron" size={14} />
         </motion.span>
-        {label}
+        {label ?? t.why}
       </button>
       <motion.div initial={false} animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }} transition={{ duration: 0.4, ease }} style={{ overflow: 'hidden' }}>
         <div style={{ paddingTop: 14 }}>{children}</div>

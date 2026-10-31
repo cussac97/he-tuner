@@ -2,6 +2,9 @@
 // The Wooting analog report identifies keys by HID usage, the browser by `code`;
 // both describe the physical position, so this table links the two worlds.
 
+import { tr, type Messages } from '../i18n'
+import { codeNames, shortLabels } from '../i18n/app/keys'
+
 const map: Record<number, string> = {}
 
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -71,39 +74,15 @@ export function isKnownUsage(usage: number): boolean {
   return usage in map || usage in wootingExtra
 }
 
-export const SHORT_LABELS: Record<string, string> = {
-  Escape: 'Esc',
-  Backspace: '⌫',
-  Tab: 'Tab',
-  CapsLock: 'Caps',
-  Enter: '⏎',
-  ShiftLeft: 'Shift',
-  ShiftRight: 'Shift',
-  ControlLeft: 'Ctrl',
-  ControlRight: 'Ctrl',
-  AltLeft: '⌥',
-  AltRight: '⌥',
-  MetaLeft: '⌘',
-  MetaRight: '⌘',
-  Space: '',
-  Fn: 'Fn',
-  ContextMenu: 'Menu',
+/** A record whose fields read the current language at access time (keeps a plain-record shape). */
+function localized(m: Messages<Record<string, string>>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const k of Object.keys(m.en)) Object.defineProperty(out, k, { get: () => tr(m)[k], enumerable: true })
+  return out
 }
 
-export const CODE_NAMES: Record<string, string> = {
-  Space: 'Espace',
-  Backspace: 'Retour arrière',
-  Enter: 'Entrée',
-  ShiftLeft: 'Shift gauche',
-  ShiftRight: 'Shift droit',
-  ControlLeft: 'Ctrl gauche',
-  ControlRight: 'Ctrl droit',
-  AltLeft: 'Alt gauche',
-  AltRight: 'Alt droit',
-  MetaLeft: 'Cmd gauche',
-  MetaRight: 'Cmd droit',
-  CapsLock: 'Verr. Maj',
-  Tab: 'Tab',
-  Escape: 'Échap',
-  Fn: 'Fn',
-}
+/** Short cap labels for the keyboard drawing. */
+export const SHORT_LABELS: Record<string, string> = localized(shortLabels)
+
+/** Full key names, for sentences and lists. */
+export const CODE_NAMES: Record<string, string> = localized(codeNames)

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { analyzeRest } from '../analysis/exercises'
 import { KeyboardViz } from '../components/KeyboardViz'
 import { spring } from '../components/ui'
+import { tr, useT } from '../i18n'
+import { restText } from '../i18n/games/rest'
 import { demo } from '../lib/demo'
 import { CODE_NAMES } from '../lib/hidCodes'
 import { GAMING_HOME, keyLabel, TYPING_HOME } from '../lib/layout'
@@ -18,6 +20,7 @@ const name = (c: string) => CODE_NAMES[c] ?? keyLabel(c)
 
 export function RestGame({ quick, onComplete }: GameProps) {
   const s = useStore()
+  const t = useT(restText)
   const PHASE_MS = quick ? 5000 : 8000
   const [phase, setPhase] = useState<Phase>('typing')
   const start = useRef(performance.now())
@@ -57,14 +60,21 @@ export function RestGame({ quick, onComplete }: GameProps) {
         all.sort((x, y) => y.v - x.v)
         const top = all[0]
         const max = top?.v ?? 0
+        // getters: the score screen follows a language change
         onComplete({
           score: clampScore(1000 - max * 900),
-          headline: max < 0.2 ? 'Main de velours. Tes doigts posés ne pèsent presque rien.' : max < 0.6 ? 'Doigts posés légers, avec un appui sur une touche.' : 'Tu poses du poids sur certaines touches : on en tiendra compte.',
-          stats: [
-            { label: 'Appui max au repos', value: max.toFixed(2), unit: 'mm' },
-            { label: 'Touche la plus chargée', value: top ? name(top.c) : '—' },
-            { label: 'Touches posées', value: String(new Set(all.map((x) => x.c)).size) },
-          ],
+          get headline() {
+            const t = tr(restText)
+            return max < 0.2 ? t.headlineVelvet : max < 0.6 ? t.headlineLight : t.headlineHeavy
+          },
+          get stats() {
+            const t = tr(restText)
+            return [
+              { label: t.maxRest, value: max.toFixed(2), unit: 'mm' },
+              { label: t.heaviestKey, value: top ? name(top.c) : '—' },
+              { label: t.restedKeys, value: String(new Set(all.map((x) => x.c)).size) },
+            ]
+          },
         })
       })
     }
@@ -88,18 +98,18 @@ export function RestGame({ quick, onComplete }: GameProps) {
           style={{ alignItems: 'center', gap: 6 }}
         >
           <span className="label-mono" style={{ color: main }}>
-            {phase === 'typing' ? 'Position 1/2 · frappe' : 'Position 2/2 · jeu'}
+            {phase === 'typing' ? t.posTyping : t.posGaming}
           </span>
-          <div className="prompt">{phase === 'switch' ? 'Change de position !' : 'Ne bouge plus…'}</div>
+          <div className="prompt">{phase === 'switch' ? t.switchPos : t.holdStill}</div>
           <span className="muted">
-            Pose tes doigts sur : <b>{keys.map(name).join(' · ')}</b>
+            {t.restOn} <b>{keys.map(name).join(' · ')}</b>
           </span>
         </motion.div>
       </AnimatePresence>
       <div className="progress" style={{ maxWidth: 420 }}>
         <motion.div style={{ background: main }} animate={{ width: `${progress * 100}%` }} transition={{ duration: 0.1 }} />
       </div>
-      <span className="num muted">appui : {live.toFixed(2)} mm</span>
+      <span className="num muted">{t.pressure(live.toFixed(2))}</span>
       <div style={{ width: '100%', maxWidth: 640 }}>
         <KeyboardViz layout={s.settings.layout} live travel={s.settings.travel} highlight={keys} />
       </div>

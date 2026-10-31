@@ -24,7 +24,7 @@ for (const e of all) {
   else last.push(e)
 }
 
-const settings = { travel: 4, layout: 'iso' as const, lang: 'fr' as const, duration: 60, safety: 0.5, refActuation: 1.5 }
+const settings = { travel: 4, layout: 'iso' as const, duration: 60, safety: 0.5, refActuation: 1.5 }
 const f2 = (x: number) => (Number.isFinite(x) ? x.toFixed(2) : '—')
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`
 

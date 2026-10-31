@@ -1,5 +1,7 @@
 // Physical 60% layouts (ANSI / ISO), finger assignment and adjacency.
 
+import { tr } from '../i18n'
+import { fingerNames } from '../i18n/results/fingers'
 import { SHORT_LABELS } from './hidCodes'
 
 export interface KeyGeom {
@@ -58,16 +60,17 @@ export function getLayout(kind: LayoutKind): KeyGeom[] {
 
 export type Finger = 'L5' | 'L4' | 'L3' | 'L2' | 'T' | 'R2' | 'R3' | 'R4' | 'R5'
 
+/** Localized finger names; each field reads the current language when accessed. */
 export const FINGER_NAMES: Record<Finger, string> = {
-  L5: 'Auriculaire G',
-  L4: 'Annulaire G',
-  L3: 'Majeur G',
-  L2: 'Index G',
-  T: 'Pouces',
-  R2: 'Index D',
-  R3: 'Majeur D',
-  R4: 'Annulaire D',
-  R5: 'Auriculaire D',
+  get L5() { return tr(fingerNames).L5 },
+  get L4() { return tr(fingerNames).L4 },
+  get L3() { return tr(fingerNames).L3 },
+  get L2() { return tr(fingerNames).L2 },
+  get T() { return tr(fingerNames).T },
+  get R2() { return tr(fingerNames).R2 },
+  get R3() { return tr(fingerNames).R3 },
+  get R4() { return tr(fingerNames).R4 },
+  get R5() { return tr(fingerNames).R5 },
 }
 
 export const FINGERS: Finger[] = ['L5', 'L4', 'L3', 'L2', 'T', 'R2', 'R3', 'R4', 'R5']

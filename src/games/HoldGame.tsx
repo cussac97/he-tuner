@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { ceil05, quantile } from '../analysis/core'
 import { analyzeHold } from '../analysis/exercises'
 import { spring } from '../components/ui'
+import { tr, useT } from '../i18n'
+import { holdText } from '../i18n/games/hold'
 import { keyLabel } from '../lib/layout'
 import { recorder } from '../lib/recorder'
 import { useStore } from '../lib/store'
@@ -16,6 +18,7 @@ type Phase = 'wait' | 'hold' | 'release' | 'pause' | 'saving'
 
 export function HoldGame({ quick, onComplete }: GameProps) {
   const s = useStore()
+  const tx = useT(holdText)
   const HOLD_MS = quick ? 2500 : 4000
   const REPS = 3
   const [phase, setPhase] = useState<Phase>('wait')
@@ -47,18 +50,21 @@ export function HoldGame({ quick, onComplete }: GameProps) {
           const dd = res.length ? quantile(res.map((r) => r.drawdown), 0.95) : NaN
           const level = res.length ? res.reduce((a, r) => a + r.level, 0) / res.length : NaN
           const pinned = Number.isFinite(level) && level >= travel * 0.98
+          // getters: the score screen follows a language change
           onComplete({
             score: clampScore(Number.isFinite(dd) ? 1000 - dd * 2500 : 400),
-            headline: pinned
-              ? 'Tu tiens la touche en butée : rien ne bouge (le capteur est au maximum).'
-              : dd < 0.08
-                ? 'Solide comme un roc, presque aucun tremblement.'
-                : `Ton doigt oscille de ${dd.toFixed(2)} mm en maintien.`,
-            stats: [
-              { label: 'Oscillation max', value: Number.isFinite(dd) ? dd.toFixed(2) : '—', unit: 'mm' },
-              { label: 'Profondeur tenue', value: Number.isFinite(level) ? level.toFixed(2) : '—', unit: 'mm' },
-              { label: 'RT sûr à partir de', value: Number.isFinite(dd) ? Math.max(0.15, ceil05(dd + 0.05)).toFixed(2) : '—', unit: 'mm' },
-            ],
+            get headline() {
+              const m = tr(holdText)
+              return pinned ? m.headlinePinned : dd < 0.08 ? m.headlineSteady : m.headlineWobble(dd.toFixed(2))
+            },
+            get stats() {
+              const m = tr(holdText)
+              return [
+                { label: m.maxWobble, value: Number.isFinite(dd) ? dd.toFixed(2) : '—', unit: 'mm' },
+                { label: m.heldDepth, value: Number.isFinite(level) ? level.toFixed(2) : '—', unit: 'mm' },
+                { label: m.safeRt, value: Number.isFinite(dd) ? Math.max(0.15, ceil05(dd + 0.05)).toFixed(2) : '—', unit: 'mm' },
+              ]
+            },
           })
         })
       } else {
@@ -72,7 +78,7 @@ export function HoldGame({ quick, onComplete }: GameProps) {
   const fill = phase === 'hold' ? Math.min(1, (now - t.current.holdStart) / HOLD_MS) : phase === 'release' || phase === 'pause' ? 1 : 0
   const R = 92
   const C = 2 * Math.PI * R
-  const text = phase === 'wait' ? `Appuie sur ${label}` : phase === 'hold' ? 'Tiens bon…' : phase === 'release' ? 'Lâche !' : phase === 'pause' ? 'Nickel' : '…'
+  const text = phase === 'wait' ? tx.press(label) : phase === 'hold' ? tx.holdOn : phase === 'release' ? tx.letGo : phase === 'pause' ? tx.nice : '…'
 
   return (
     <div className="col" style={{ alignItems: 'center', gap: 22 }}>

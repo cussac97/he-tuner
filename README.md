@@ -6,9 +6,9 @@ HE Tuner reads the raw analog travel of every key while you play six short tests
 
 ### ▶ Try it: **https://cussac97.github.io/he-tuner/**
 
-Open it in **Chrome, Edge, Arc or Brave**, plug in your Wooting, click **Connecter**. No keyboard at hand? Click **Démo** to get simulated analog data from any keyboard, or **Voir un exemple** to explore a generated session.
+Open it in **Chrome, Edge, Arc or Brave**, plug in your Wooting, click **Connect**. No keyboard at hand? Click **Demo** to get simulated analog data from any keyboard, or **See an example** to explore a generated session.
 
-> The interface is in French for now. Translations are welcome (see [Contributing](#contributing)).
+> Available in **English, French, German and Spanish** (globe menu, top right). The typing test uses words in the same language, accents included.
 
 ---
 
@@ -32,7 +32,7 @@ Then open http://localhost:5173 in a Chromium-based browser.
 | | |
 |---|---|
 | **Reads the keyboard** | WebHID on the official Wooting analog interface: protocol V2 (`0xFF53`, 10-bit values, up to 8 kHz, plus the keyboard's own *actuated* bit) and V1 (`0xFF54`). The format follows [wooting-analog-sdk](https://github.com/WootingKb/wooting-analog-sdk). |
-| **Six tests** | Typing (Monkeytype-style, French accents and dead keys supported), resting fingers, fast repeat, hold stability, counter-strafe, analog control. They run back to back like levels in a game. |
+| **Six tests** | Typing (Monkeytype-style, words in English, French, German or Spanish, accents and dead keys supported), resting fingers, fast repeat, hold stability, counter-strafe, analog control. They run back to back like levels in a game. |
 | **Labels every key movement** | Intended press, brush of a neighbouring key, resting finger, too-light press, stray character. The ground truth comes from the expected text. |
 | **Replays the data under other settings** | Fixed actuation, Rapid Trigger (separate press/release), continuous RT, SOCD (last input / deeper wins). Each candidate setting is scored on your own keystrokes. |
 | **Reads your current settings** | Your current actuation point and Rapid Trigger state, read from the keyboard (protocol V2) or inferred from the timing of the keydowns. |
@@ -56,6 +56,7 @@ WebHID reports ─► recorder (per-key step functions, mm)
 - `src/games/` — the six levels and the level runner (intro → countdown → play → score)
 - `src/lib/demo.ts` — demo source: turns ordinary key presses into plausible analog traces
 - `src/lib/sample.ts` — generates a full example session from a model typist. It doubles as a regression fixture.
+- `src/i18n/` — interface text, one namespace file per area, each holding the four languages side by side
 
 ### Scripts
 
@@ -63,7 +64,7 @@ WebHID reports ─► recorder (per-key step functions, mm)
 |---|---|
 | `npm run dev` | dev server, plus a local archive (see below) |
 | `npm run build` | typecheck + production build |
-| `npm run check` | runs the whole analysis on a generated session, plus decoding and dead-key tests |
+| `npm run check` | runs the whole analysis on a generated session, plus decoding, dead-key and word-list tests |
 | `npm run analyze` | re-runs the analysis on your archived real recordings |
 
 ### Local archive
@@ -73,7 +74,7 @@ While the app runs with `npm run dev`, every exercise you record is also written
 ## Supported keyboards
 
 - **Tested:** Wooting 60HE v2 (ISO, macOS, Chrome).
-- **Expected to work:** any Wooting that exposes the analog interface (80HE, 60HE / 60HE+, Two HE, UwU…). Please open an issue with your model and the output of the **HID diagnostic** panel (Visualiseur page) whether it works or not.
+- **Expected to work:** any Wooting that exposes the analog interface (80HE, 60HE / 60HE+, Two HE, UwU…). Please open an issue with your model and the output of the **HID diagnostic** panel (Visualizer page) whether it works or not.
 
 ## Status and known limitations
 
@@ -90,9 +91,9 @@ This is an early version. Real-world data from a first user already showed where
 ## Contributing
 
 Issues and PRs are welcome, especially:
-- recordings from other Wooting models: export them from **Données → Exporter tout**, after checking the file is fine to share;
+- recordings from other Wooting models: export them from **Data → Export all**, after checking the file is fine to share;
 - fixes for the limitations above (run `npm run check` before submitting);
-- translations of the interface.
+- new languages: add a block to each namespace file in `src/i18n/` (TypeScript lists every missing string) and a word list in `src/lib/typing.ts`.
 
 ## Disclaimer
 
@@ -108,7 +109,7 @@ HE Tuner is an independent community project. It is not affiliated with or endor
 
 HE Tuner lit la course analogique de chaque touche de ton Wooting pendant six tests courts (frappe, repos, spam, maintien, strafe, analogique). Il rejoue ensuite tes frappes avec des centaines de réglages possibles pour te recommander un point d'actuation, un Rapid Trigger et un SOCD adaptés à tes doigts.
 
-- **Essayer :** https://cussac97.github.io/he-tuner/ (Chrome, Edge, Arc ou Brave), puis « Connecter », ou « Démo » sans clavier.
+- **Essayer :** https://cussac97.github.io/he-tuner/ (Chrome, Edge, Arc ou Brave). L'interface s'ouvre en anglais : choisis **Français** dans le menu 🌐 en haut à droite, puis « Connecter », ou « Démo » sans clavier.
 - **En local :**
 
   ```bash
