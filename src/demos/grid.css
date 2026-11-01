@@ -1,0 +1,529 @@
+/* The feature grid. Everything nests under .feature-grid; one rounded container, the
+   rules are its own color showing through 1px gaps between the cells. */
+.feature-grid {
+  --pad: 28px;
+  --cell: #0e0e10;
+  --rule: #1c1c1f;
+  container-type: inline-size;
+
+  & .fg-grid {
+    display: grid;
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    border-radius: 18px;
+    background: var(--rule);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'tests' 'stat' 'keys' 'socd' 'local';
+  }
+
+  /* A tablet: the tests across, a pair, then two bands */
+  @container (min-width: 600px) {
+    & .fg-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas: 'tests tests' 'stat keys' 'socd socd' 'local local';
+    }
+  }
+
+  /* The page column: 2 + 1, 1 + 2, then the statement across */
+  @container (min-width: 900px) {
+    & .fg-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-areas: 'tests tests stat' 'keys socd socd' 'local local local';
+    }
+  }
+
+  @container (max-width: 599px) {
+    & .fg-grid {
+      --pad: 24px;
+    }
+  }
+
+  /* ---- The cell: one frame for all five ---- */
+
+  & .fg-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--cell);
+  }
+
+  & .fg-cell--tests { grid-area: tests; }
+  & .fg-cell--stat { grid-area: stat; }
+  & .fg-cell--keys { grid-area: keys; }
+  & .fg-cell--socd { grid-area: socd; }
+  & .fg-cell--local { grid-area: local; }
+
+  & .fg-copy {
+    max-width: 470px;
+    margin: 0;
+    padding: 26px var(--pad) 0;
+    color: var(--ink-2);
+    font-size: 17px;
+    line-height: 24px;
+    letter-spacing: -0.012em;
+    text-wrap: pretty;
+  }
+
+  & .fg-copy b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* Pictures sit under the copy, pinned to the cell's foot */
+  & .fg-picture {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 22px;
+  }
+
+  /* The strafe picture doesn't bleed: when its neighbor sets a taller row, it sits in
+     the middle of the room under its copy rather than leaving a band above it */
+  & .fg-cell--socd .fg-picture {
+    margin-block: auto;
+  }
+
+  & .fg-stage .ss-stage {
+    overflow: hidden;
+    background: transparent;
+  }
+
+  /* ---- Tests ---- */
+
+  /* Wide: one panel ruled into six cells, the way the grid itself is ruled */
+  & .fg-tests {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 8px var(--pad) 0;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+    border-radius: 14px;
+    background: #131315;
+  }
+
+  & .fg-tests:not(.fg-tests--list) .fg-test:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  & .fg-tests:not(.fg-tests--list) .fg-test:not(:nth-child(3n)) {
+    border-right: 1px solid var(--line-2);
+  }
+
+  /* A card: the icon tile and the check on top, the name and what it measured below */
+  & .fg-test {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(8px, 1fr) auto auto;
+    grid-template-areas: 'icon . check' '. . .' 'name name name' 'value value value';
+    row-gap: 0;
+    height: 104px;
+    padding: 12px 14px;
+  }
+
+  & .fg-test__icon {
+    grid-area: icon;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: var(--elev);
+    box-shadow: inset 0 0 0 1px var(--line-2);
+    color: var(--accent);
+  }
+
+  & .fg-check {
+    grid-area: check;
+    align-self: center;
+    --ss-success: var(--accent);
+  }
+
+  /* Narrow: one panel, one row per test */
+  & .fg-tests--list {
+    display: block;
+    padding: 1px 0;
+    background: #131315;
+  }
+
+  & .fg-tests--list .fg-test {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: 46px;
+    grid-template-areas: 'icon name value check';
+    align-items: center;
+    column-gap: 12px;
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  & .fg-tests--list .fg-test + .fg-test {
+    border-top: 1px solid var(--line);
+  }
+
+  & .fg-tests--list .fg-test__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  & .fg-tests--list .fg-test__value {
+    margin: 0;
+    text-align: right;
+  }
+
+  & .fg-check .ss-check__tick {
+    stroke: #0b0b0c;
+  }
+
+  & .fg-test__name {
+    grid-area: name;
+    color: var(--ink);
+    font-family: var(--title);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 19px;
+  }
+
+  /* What the test measured arrives with its check */
+  & .fg-test__value {
+    grid-area: value;
+    margin-top: 2px;
+    will-change: transform;
+    overflow: hidden;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 16px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(3px);
+    transition:
+      opacity 0.35s ease,
+      transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  & .fg-test[data-done] .fg-test__value {
+    color: var(--ink-2);
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ---- Polling (stat) ---- */
+
+  /* The lead on the row's title line, the figure and its label at the foot (gold: Reads) */
+  & .fg-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 26px var(--pad) 28px;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  & .fg-stat__lead {
+    margin-bottom: auto;
+    padding-bottom: 32px;
+  }
+
+  & .fg-stat__lead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+
+  & .fg-stat__lead svg {
+    color: var(--accent);
+  }
+
+  & .fg-stat__number {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: var(--ink);
+    font-family: var(--title);
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  & .fg-stat__unit {
+    color: var(--ink-3);
+    font-size: 32px;
+    letter-spacing: -0.02em;
+  }
+
+  & .fg-stat__label {
+    max-width: 260px;
+    color: var(--ink-2);
+    font-size: 15px;
+    line-height: 21px;
+  }
+
+  /* ---- Per key (diagram) ---- */
+
+  & .fg-keys {
+    position: relative;
+    height: 100%;
+    margin-left: var(--pad);
+  }
+
+  /* The product's keycap; a key's lime fill is its actuation depth, top down */
+  & .fg-key {
+    position: absolute;
+    overflow: hidden;
+    border-radius: 9px;
+    background: #161618;
+    box-shadow:
+      inset 0 0 0 1px var(--line-2),
+      inset 0 -3px 0 rgb(0 0 0 / 0.35);
+  }
+
+  & .fg-key__fill {
+    position: absolute;
+    inset: 0 0 auto;
+    background: rgb(255 255 255 / 0.05);
+    border-bottom: 2px solid rgb(255 255 255 / 0.18);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.9s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition-delay: calc(var(--i) * 28ms);
+  }
+
+  & .fg-key[data-lit] .fg-key__fill {
+    background: rgb(200 255 46 / 0.12);
+    border-bottom-color: var(--accent);
+  }
+
+  & .fg-keys[data-on] .fg-key__fill {
+    transform: none;
+  }
+
+  & .fg-key__label {
+    position: absolute;
+    left: 8px;
+    bottom: 7px;
+    display: flex;
+    gap: 7px;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 13px;
+    white-space: nowrap;
+  }
+
+  & .fg-key[data-lit] .fg-key__label {
+    color: var(--ink);
+  }
+
+  & .fg-key__label b {
+    color: var(--accent);
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.4s ease 0.7s;
+  }
+
+  & .fg-keys[data-on] .fg-key__label b {
+    opacity: 1;
+  }
+
+  /* ---- Strafe (component) ---- */
+
+  & .fg-socd {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 24px;
+    box-sizing: border-box;
+    height: 100%;
+  }
+
+  & .fg-lanes {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 30px;
+  }
+
+  & .fg-lane {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  & .fg-lane__key {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 28px;
+    border-radius: 7px;
+    background: var(--elev);
+    box-shadow:
+      inset 0 0 0 1px var(--line-2),
+      0 2px 0 rgb(0 0 0 / 0.5);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  & .fg-lane__track {
+    position: relative;
+    flex: 1;
+    height: 14px;
+    border-radius: 7px;
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  & .fg-lane__held {
+    position: absolute;
+    top: 0;
+    height: 14px;
+    border-radius: 7px;
+    background: rgb(255 255 255 / 0.6);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition:
+      transform 0.7s cubic-bezier(0.45, 0, 0.1, 1) calc(var(--i) * 0.28s),
+      width 0.6s cubic-bezier(0.45, 0, 0.1, 1) 1.95s;
+  }
+
+  & .fg-socd[data-on] .fg-lane__held {
+    transform: none;
+  }
+
+  /* Both keys held: the measured overlap, named once above the lanes */
+  & .fg-overlap {
+    position: absolute;
+    top: 22px;
+    bottom: -6px;
+    border-radius: 6px;
+    background: rgb(255 122 61 / 0.2);
+    box-shadow:
+      inset 1px 0 0 rgb(255 122 61 / 0.7),
+      inset -1px 0 0 rgb(255 122 61 / 0.7);
+    opacity: 0;
+    transition:
+      opacity 0.5s ease 0.95s,
+      background-color 0.6s ease 1.95s;
+  }
+
+  /* Once the mode cuts the first key, the overlap is only its outline: measured, gone */
+  & .fg-socd[data-on] .fg-overlap {
+    opacity: 1;
+    background-color: rgb(255 122 61 / 0.05);
+  }
+
+  & .fg-overlap__label {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-bottom: 6px;
+    transform: translateX(-50%);
+    color: var(--ink-2);
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+
+  & .fg-overlap__label b {
+    color: var(--warn);
+    font-family: var(--mono);
+    font-weight: 600;
+  }
+
+  /* The product's segmented control, the recommended mode lit */
+  & .fg-seg {
+    align-self: flex-start;
+    width: min(100%, 420px);
+    padding: 3px;
+    border-radius: 10px;
+    background: var(--bg-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  & .fg-seg .ss-seg__thumb {
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: calc((100% - 6px) / var(--n));
+    border-radius: 7px;
+    background: var(--elev-2);
+    box-shadow: none;
+    transition-delay: 1.35s;
+  }
+
+  & .fg-seg .ss-seg__option {
+    height: 32px;
+    padding: 0 8px;
+    color: var(--ink-3);
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
+    transition: color 0.3s ease 1.35s;
+  }
+
+  & .fg-seg .ss-seg__option[data-on] {
+    color: var(--accent);
+  }
+
+  /* ---- Local (statement) ---- */
+
+  & .fg-statement {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px 40px;
+    flex-wrap: wrap;
+    padding: 30px var(--pad);
+  }
+
+  & .fg-statement p {
+    max-width: 720px;
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 22px;
+    line-height: 30px;
+    letter-spacing: -0.018em;
+    text-wrap: pretty;
+  }
+
+  & .fg-statement p b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  @container (max-width: 599px) {
+    & .fg-statement p {
+      font-size: 18px;
+      line-height: 26px;
+    }
+  }
+
+  & .fg-statement a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    color: var(--ink-2);
+    font-size: 14px;
+  }
+
+  & .fg-statement a:hover {
+    color: var(--accent);
+  }
+}

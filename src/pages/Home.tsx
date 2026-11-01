@@ -1,22 +1,16 @@
 import { motion } from 'framer-motion'
 import { ConnectButtons, DeviceHint, useDevice } from '../components/Device'
-import { Icon, type IconName } from '../components/icons'
+import { Icon } from '../components/icons'
 import { KeyboardViz } from '../components/KeyboardViz'
-import { Btn, ease, Item, MaskText, Reveal, Spot } from '../components/ui'
+import { Btn, ease, MaskText } from '../components/ui'
+import { FeatureGrid } from '../demos/FeatureGrid'
+import { ReplayDemo } from '../demos/ReplayDemo'
 import { LEVELS } from '../games/levels'
 import { useT } from '../i18n'
 import { homeText } from '../i18n/app/home'
 import { navigate } from '../lib/router'
 import { generateSampleSession } from '../lib/sample'
 import { store, useStore } from '../lib/store'
-
-const SPECS = ['rate', 'resolution', 'tests', 'local'] as const
-
-const FEATURES: Array<{ icon: IconName; key: 'raw' | 'tests' | 'replay' }> = [
-  { icon: 'analog', key: 'raw' },
-  { icon: 'bolt', key: 'tests' },
-  { icon: 'flask', key: 'replay' },
-]
 
 export function Home() {
   const s = useStore()
@@ -76,6 +70,10 @@ export function Home() {
 
       <DeviceHint />
 
+      <ReplayDemo />
+
+      <FeatureGrid />
+
       <motion.div className="card" initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.8, ease, delay: 0.55 }}>
         <div className="card-head">
           <div>
@@ -89,31 +87,6 @@ export function Home() {
         </div>
         <KeyboardViz layout={s.settings.layout} live travel={s.settings.travel} />
       </motion.div>
-
-      <Reveal className="grid g4">
-        {SPECS.map((k) => (
-          <Item key={k} className="tile" style={{ padding: '16px 18px' }}>
-            <div style={{ fontFamily: 'var(--title)', fontWeight: 900, fontSize: 24, letterSpacing: '-0.03em' }}>{t.specs[k].v}</div>
-            <div className="label-mono" style={{ marginTop: 2 }}>
-              {t.specs[k].l}
-            </div>
-          </Item>
-        ))}
-      </Reveal>
-
-      <Reveal className="grid g3">
-        {FEATURES.map((f) => (
-          <Spot key={f.key}>
-            <div className="icon-tile">
-              <Icon name={f.icon} />
-            </div>
-            <h3 style={{ marginTop: 16 }}>{t.features[f.key].t}</h3>
-            <p className="muted" style={{ marginTop: 6, fontSize: 13.5 }}>
-              {t.features[f.key].d}
-            </p>
-          </Spot>
-        ))}
-      </Reveal>
     </div>
   )
 }

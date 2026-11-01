@@ -57,6 +57,8 @@ WebHID reports ─► recorder (per-key step functions, mm)
 - `src/lib/demo.ts` — demo source: turns ordinary key presses into plausible analog traces
 - `src/lib/sample.ts` — generates a full example session from a model typist. It doubles as a regression fixture.
 - `src/i18n/` — interface text, one namespace file per area, each holding the four languages side by side
+- `src/demos/` — the home page illustrations: the replay hero and the feature grid. Their pressed strips come from the same state machine as the analysis (`analysis/core.ts`)
+- `src/kit/` — the [Stageshow](https://github.com/benjitaylor/skills/tree/main/stageshow) kit (MIT) the illustrations are built on
 
 ### Scripts
 
@@ -101,7 +103,7 @@ HE Tuner is an independent community project. It is not affiliated with or endor
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). `src/kit/` is Stageshow by Benji Taylor, also MIT (see `src/kit/LICENSE`).
 
 ---
 

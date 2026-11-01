@@ -1,0 +1,361 @@
+/* The replay hero. Everything nests under .replay (references/craft.md, Recipes). */
+.replay-host {
+  width: 100%;
+}
+
+.replay {
+  & .ss-stage {
+    overflow: hidden;
+  }
+
+  /* Fade crop: the mask sits on a wrapper with room around the window, so the window
+     keeps its edge and shadow on the top and sides; only its foot dissolves */
+  & .rp-mask {
+    position: absolute;
+    inset: 0;
+    -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent 99%);
+    mask-image: linear-gradient(to bottom, #000 80%, transparent 99%);
+  }
+
+  /* Narrow, the card sits whole under its gutter and runs off the right: no fade */
+  & .ss-stage[data-layout='compact'] .rp-mask {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* A step lighter than the page, its chrome a step lighter again; on black, depth
+     comes from those steps and a hairline, not a shadow */
+  & .rp-win {
+    height: 720px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.05),
+      0 0 0 1px rgb(255 255 255 / 0.07),
+      0 40px 80px -30px rgb(0 0 0 / 0.8);
+  }
+
+  /* The page, the window, the card: each a step lighter than the one under it */
+  & .rp-win .ss-window__body {
+    background: var(--ss-canvas);
+  }
+
+  & .rp-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  & .rp-card {
+    position: relative;
+    border-radius: 18px;
+    background: var(--ss-surface);
+    box-shadow: inset 0 0 0 1px var(--ss-line);
+  }
+
+  /* ---- Head ---- */
+
+  & .rp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    /* a lane for the annotation between the head and the plot */
+    margin-bottom: 34px;
+  }
+
+  & .rp-head[data-compact] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  & .rp-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ss-text-strong);
+    font-family: var(--title);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* The product's keycap (.kbd) */
+  & .rp-key {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 6px;
+    background: var(--ss-raised);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.11),
+      0 2px 0 rgb(0 0 0 / 0.5);
+    color: var(--ss-text-strong);
+    font-family: var(--ss-mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  & .rp-status {
+    flex: none;
+    height: 28px;
+    font-family: var(--ss-mono);
+    font-size: 12px;
+    line-height: 28px;
+  }
+
+  & .rp-tried {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    height: 28px;
+    align-items: center;
+    color: var(--ss-text-faint);
+    white-space: nowrap;
+  }
+
+  & .rp-tried b {
+    display: inline-block;
+    min-width: 3ch;
+    text-align: right;
+    color: var(--ss-text-strong);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .rp-gain {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 99px;
+    background: var(--ss-accent-soft);
+    box-shadow: inset 0 0 0 1px rgb(200 255 46 / 0.28);
+    color: var(--ss-accent);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ---- Chart: depth grows downward, like the key itself ---- */
+
+  & .rp-chart {
+    position: relative;
+  }
+
+  & .rp-chart svg {
+    display: block;
+    overflow: visible;
+  }
+
+  & .rp-grid {
+    stroke: rgb(255 255 255 / 0.06);
+    stroke-width: 1;
+  }
+
+  & .rp-axis {
+    fill: var(--ss-text-faint);
+    color: var(--ss-text-faint);
+    font-family: var(--ss-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-anchor: end;
+  }
+
+
+  & .rp-rest {
+    fill: rgb(255 255 255 / 0.045);
+  }
+
+  & .rp-trace {
+    fill: none;
+    stroke: var(--ss-text-strong);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0.88;
+  }
+
+  & .rp-line {
+    position: absolute;
+    top: 0;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 1px;
+    background: var(--ss-accent);
+    box-shadow: 0 0 10px rgb(200 255 46 / 0.45);
+  }
+
+  /* Where the keyboard registers each press: on the curve, where it crosses the line */
+  & .rp-dot {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ss-accent);
+    box-shadow: 0 0 0 3px var(--ss-surface);
+  }
+
+  /* An annotation: one quiet leader from the resting band down to its name */
+  & .rp-note {
+    position: absolute;
+    top: -8px;
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  & .rp-note[data-on] {
+    opacity: 1;
+  }
+
+  & .rp-note__leader {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    background: rgb(255 255 255 / 0.28);
+  }
+
+  & .rp-note__leader::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: -2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ss-text);
+  }
+
+  & .rp-note__text {
+    position: absolute;
+    bottom: 4px;
+    left: -8px;
+    white-space: nowrap;
+    color: var(--ss-text);
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  & .rp-note__text b {
+    margin-left: 4px;
+    color: var(--ss-text-strong);
+    font-family: var(--ss-mono);
+    font-weight: 600;
+  }
+
+  & .ss-stage[data-layout='compact'] .rp-note__text {
+    left: auto;
+    right: -8px;
+  }
+
+  /* ---- Registered strip ---- */
+
+  & .rp-lane-label {
+    margin-top: 14px;
+    color: var(--ss-text-faint);
+    font-family: var(--ss-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 14px;
+    text-transform: uppercase;
+  }
+
+  & .rp-lane {
+    position: relative;
+    height: 10px;
+    margin-top: 8px;
+    border-radius: 5px;
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  & .rp-seg {
+    position: absolute;
+    top: 0;
+    height: 10px;
+    border-radius: 5px;
+    background: var(--ss-accent);
+  }
+
+  /* ---- Settings, as the Visualizer draws them ---- */
+
+  & .rp-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    margin-top: 24px;
+  }
+
+  & .rp-fields[data-stacked] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  & .rp-field__label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 12px;
+    color: var(--ss-text);
+    font-size: 13px;
+    line-height: 18px;
+    white-space: nowrap;
+  }
+
+  & .rp-field__label b {
+    color: var(--ss-text-strong);
+    font-family: var(--ss-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .rp-track {
+    position: relative;
+    height: 4px;
+    margin: 0 8px;
+    border-radius: 4px;
+    background: #222226;
+  }
+
+  & .rp-track__fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 4px;
+    background: rgb(200 255 46 / 0.35);
+  }
+
+  & .rp-knob {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border-radius: 50%;
+    background: var(--ss-accent);
+    box-shadow: 0 0 0 3px rgb(200 255 46 / 0.1);
+  }
+
+  /* ---- Filler: the Visualizer's stat tiles ---- */
+
+  & .rp-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  & .rp-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: 92px;
+    padding: 18px;
+    border-radius: 14px;
+    background: var(--ss-surface);
+    box-shadow: inset 0 0 0 1px var(--ss-line);
+  }
+}

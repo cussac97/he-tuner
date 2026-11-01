@@ -1,0 +1,24 @@
+/* HE Tuner's own look for every illustration stage: the site's tokens mapped onto the
+   kit's (references/looks.md). Dark theme, one lit color: the lime accent. */
+.he-look .ss-stage[data-theme='dark'] {
+  --ss-font: var(--sans);
+  --ss-mono: var(--mono);
+  --ss-accent: #c8ff2e;
+  --ss-accent-soft: rgba(200, 255, 46, 0.12);
+  --ss-accent-text: #c8ff2e;
+  --ss-canvas: #0f0f11;
+  --ss-surface: #131315;
+  --ss-chrome: #18181b;
+  --ss-raised: #1a1a1d;
+  --ss-well: #0b0b0c;
+  --ss-text-strong: #ededef;
+  --ss-text: #a0a0a8;
+  --ss-text-faint: #5f5f68;
+  --ss-line: rgba(255, 255, 255, 0.065);
+  --ss-line-faint: rgba(255, 255, 255, 0.045);
+  --ss-radius-md: 10px;
+  --ss-radius-lg: 14px;
+  --ss-radius-window: 14px;
+  background: transparent;
+  color: var(--ss-text);
+}

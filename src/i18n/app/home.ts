@@ -2,9 +2,6 @@
 
 import { messages } from '..'
 
-type Spec = { v: string; l: string }
-type Feature = { t: string; d: string }
-
 export const homeText = messages<{
   pill: string
   hero1: string
@@ -18,8 +15,6 @@ export const homeText = messages<{
   liveHid: string
   liveDemo: string
   liveNone: string
-  specs: { rate: Spec; resolution: Spec; tests: Spec; local: Spec }
-  features: { raw: Feature; tests: Feature; replay: Feature }
 }>(
   {
     pill: 'Wooting · analog protocol V2',
@@ -34,17 +29,6 @@ export const homeText = messages<{
     liveHid: 'Press a key: it sinks and fills up to its real depth.',
     liveDemo: 'Demo mode: your keystrokes are turned into simulated key travel.',
     liveNone: 'Plug in your Wooting (Chrome, Edge, Arc, Brave) or try the demo.',
-    specs: {
-      rate: { v: '8000 Hz', l: 'analog polling' },
-      resolution: { v: '0.004 mm', l: 'resolution' },
-      tests: { v: '6 tests', l: '≈ 2 minutes' },
-      local: { v: '100%', l: 'local, nothing is uploaded' },
-    },
-    features: {
-      raw: { t: 'Raw readings', d: 'The travel of every key at 8 kHz, plus the actuation state the keyboard computes itself.' },
-      tests: { t: 'Six targeted tests', d: 'Typing, rest, spam, hold, strafe, analog control: each one isolates a specific behavior.' },
-      replay: { t: 'Replayed, not guessed', d: 'Every suggested setting is first simulated on your own recorded keystrokes.' },
-    },
   },
   {
     fr: {
@@ -60,17 +44,6 @@ export const homeText = messages<{
       liveHid: 'Appuie sur une touche : elle s’enfonce et se remplit selon sa vraie profondeur.',
       liveDemo: 'Mode démo : tes frappes sont converties en courses simulées.',
       liveNone: 'Branche ton Wooting (Chrome, Edge, Arc, Brave) ou essaie la démo.',
-      specs: {
-        rate: { v: '8 000 Hz', l: 'lecture analogique' },
-        resolution: { v: '0,004 mm', l: 'résolution' },
-        tests: { v: '6 tests', l: '≈ 2 minutes' },
-        local: { v: '100 %', l: 'local, rien n’est envoyé' },
-      },
-      features: {
-        raw: { t: 'Lecture brute', d: 'La course de chaque touche à 8 kHz, et l’état d’actuation que le clavier calcule lui-même.' },
-        tests: { t: 'Six tests ciblés', d: 'Frappe, repos, spam, maintien, strafe, contrôle analogique : chacun isole un comportement précis.' },
-        replay: { t: 'Rejoué, pas deviné', d: 'Chaque réglage proposé a d’abord été simulé sur tes propres frappes enregistrées.' },
-      },
     },
     de: {
       pill: 'Wooting · Analogprotokoll V2',
@@ -85,17 +58,6 @@ export const homeText = messages<{
       liveHid: 'Drück eine Taste: Sie sinkt ein und füllt sich bis zu ihrer echten Tiefe.',
       liveDemo: 'Demo-Modus: Deine Anschläge werden in simulierten Tastenweg umgewandelt.',
       liveNone: 'Schließ dein Wooting an (Chrome, Edge, Arc, Brave) oder probier die Demo aus.',
-      specs: {
-        rate: { v: '8000 Hz', l: 'analoge Abtastung' },
-        resolution: { v: '0.004 mm', l: 'Auflösung' },
-        tests: { v: '6 Tests', l: '≈ 2 Minuten' },
-        local: { v: '100 %', l: 'lokal, nichts wird gesendet' },
-      },
-      features: {
-        raw: { t: 'Rohdaten', d: 'Der Tastenweg jeder Taste mit 8 kHz, dazu der Auslösezustand, den die Tastatur selbst berechnet.' },
-        tests: { t: 'Sechs gezielte Tests', d: 'Tippen, Ruhe, Spam, Halten, Strafe, analoge Kontrolle: Jeder Test isoliert ein bestimmtes Verhalten.' },
-        replay: { t: 'Nachgespielt, nicht geraten', d: 'Jede vorgeschlagene Einstellung wird zuerst auf deinen eigenen aufgezeichneten Anschlägen simuliert.' },
-      },
     },
     es: {
       pill: 'Wooting · protocolo analógico V2',
@@ -110,17 +72,6 @@ export const homeText = messages<{
       liveHid: 'Pulsa una tecla: se hunde y se llena según su profundidad real.',
       liveDemo: 'Modo demo: tus pulsaciones se convierten en carreras simuladas.',
       liveNone: 'Conecta tu Wooting (Chrome, Edge, Arc, Brave) o prueba la demo.',
-      specs: {
-        rate: { v: '8000 Hz', l: 'lectura analógica' },
-        resolution: { v: '0.004 mm', l: 'resolución' },
-        tests: { v: '6 pruebas', l: '≈ 2 minutos' },
-        local: { v: '100 %', l: 'local, no se envía nada' },
-      },
-      features: {
-        raw: { t: 'Lectura en bruto', d: 'La carrera de cada tecla a 8 kHz, y el estado de actuación que calcula el propio teclado.' },
-        tests: { t: 'Seis pruebas específicas', d: 'Escritura, reposo, spam, mantener, strafe, control analógico: cada una aísla un comportamiento concreto.' },
-        replay: { t: 'Reproducido, no adivinado', d: 'Cada ajuste propuesto se simula antes sobre tus propias pulsaciones grabadas.' },
-      },
     },
   },
 )
